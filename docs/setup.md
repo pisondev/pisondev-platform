@@ -46,12 +46,16 @@ Database ids for `.env`:
 
 ## Going two-way
 
-`SYNC_MODE=pull` only reads Notion and refuses edits in the web app. When ready:
+`.env.example` starts in `SYNC_MODE=pull`, which only reads Notion and refuses edits in the
+web app. On a new machine, after the first pull:
 
-1. `go run ./cmd/api sync --dry-run` must show no unexpected pushes.
-2. Set `SYNC_MODE=full` and restart.
-3. Add a small test transaction in the web app; within a minute it should appear in
-   Notion and in the sheet. Delete it from the web app; it disappears from both.
+1. `SYNC_MODE=full go run ./cmd/api sync --dry-run` must report 0 changes.
+2. Set `SYNC_MODE=full` in `.env` and restart.
+3. Optional round trip: add a Rp1 expense with Notes containing `dikecualikan dari kuota`
+   (left out of the quota), check Notion and the sheet, then delete it from the web app.
+
+Done on 15 Oct 2026: the dry run reported 0 changes, and the Rp1 round trip reached
+Notion within 6 s and the sheet within a minute, both for the new row and its deletion.
 
 ## Deployment (after the domain is bought)
 

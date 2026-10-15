@@ -5,6 +5,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-15
+
+### Changed
+
+- CI actions moved to their Node 24 releases (`actions/checkout` v7.0.1,
+  `actions/setup-go` v7.0.0, `actions/setup-node` v7.0.0, `pnpm/action-setup` v6.1.0),
+  removing the Node 20 deprecation warnings.
+- CI runners pinned to `ubuntu-24.04`, since `ubuntu-latest` moves to Ubuntu 26.04 from
+  19 Oct 2026.
+- Local sync runs in `full` mode. The setup guide describes the switch from `pull`.
+
+### Verified
+
+- Two-way sync on live data: a Rp1 test transaction added in the web app reached Notion
+  within 6 s and the Google Sheet within a minute; deleting it removed it from both, and
+  the sheet's recomputed Weekly Recap values flowed back to Postgres.
+
 ## [0.1.0] - 2026-10-15
 
 First version of the private assistant workspace, Finance Assistant only, running locally.
