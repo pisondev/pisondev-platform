@@ -1,0 +1,55 @@
+# Secrets. Only the *.example templates are tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials*.json
+client_secret*.json
+token*.json
+secrets/
+
+# AI agent context and tool state. Never part of this repository.
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+.mcp.json
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.gemini/
+.aider*
+agent-notes/
+
+# Raw Figma exports. They hold personal finance figures; regenerate with design/README.md.
+design/figma/
+
+# Go
+services/api/bin/
+services/api/tmp/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.pnpm-store/
+npm-debug.log*
+pnpm-debug.log*
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.log
