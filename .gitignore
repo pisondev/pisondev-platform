@@ -10,9 +10,8 @@ client_secret*.json
 token*.json
 secrets/
 
-# AI agent context and tool state. Never part of this repository.
+# AI agent tool state and personal context. The shared CLAUDE.md guide is tracked.
 .claude/
-CLAUDE.md
 CLAUDE.local.md
 AGENTS.md
 GEMINI.md

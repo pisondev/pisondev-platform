@@ -36,7 +36,8 @@ DSN_LOCAL='@(localhost|127\.0\.0\.1|postgres|db)[:/]'
 
 BLOCKED_FILES='(^|/)(\.env(\.[^/]*)?|[^/]*\.pem|[^/]*\.key|[^/]*\.p12|credentials[^/]*\.json|client_secret[^/]*\.json|token[^/]*\.json)$'
 ALLOWED_FILES='(^|/)\.env\.example$'
-AGENT_FILES='(^|/)(CLAUDE\.md|CLAUDE\.local\.md|AGENTS\.md|GEMINI\.md|\.mcp\.json|\.cursorrules|\.windsurfrules)$|(^|/)(\.claude|\.cursor|\.windsurf|\.gemini|agent-notes)/'
+# The shared CLAUDE.md guide is allowed; tool state and personal agent files are not.
+AGENT_FILES='(^|/)(CLAUDE\.local\.md|AGENTS\.md|GEMINI\.md|\.mcp\.json|\.cursorrules|\.windsurfrules)$|(^|/)(\.claude|\.cursor|\.windsurf|\.gemini|agent-notes)/'
 
 problems=0
 report() {
