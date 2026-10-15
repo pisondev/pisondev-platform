@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-15
+
+### Added
+
+- `CLAUDE.md`, the working guide for coding sessions: rules, map, checks, conventions and
+  gotchas.
+- `docs/roadmap.md` with the current status and the deployment plan for after 20 Oct 2026.
+
+### Changed
+
+- The guards now allow the shared `CLAUDE.md`; AI tool state (`.claude/`,
+  `CLAUDE.local.md`, `.mcp.json` and similar) stays blocked.
+
 ## [0.1.1] - 2026-10-15
 
 ### Changed

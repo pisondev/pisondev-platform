@@ -50,6 +50,8 @@ pnpm install
 pnpm dev                                  # web on http://localhost:3100
 ```
 
+To stop: Ctrl+C in both terminals, then `docker compose stop` (data stays in the volume).
+
 Full setup, including the Google OAuth client and the Notion integration:
 [docs/setup.md](docs/setup.md).
 
@@ -70,6 +72,9 @@ Full setup, including the Google OAuth client and the Notion integration:
 - No AI attribution anywhere: `.githooks/commit-msg` and the CI `guards` job reject
   `Co-Authored-By` trailers and similar markers.
 - No secrets in git: `.githooks/pre-commit`, the CI `guards` job and gitleaks block
-  tokens, keys, `.env` files and AI agent files, and GitHub secret scanning with push
-  protection is on for the repository. Real values live only in `.env`.
+  tokens, keys, `.env` files and AI tool state (`.claude/`, `CLAUDE.local.md`, ...), and
+  GitHub secret scanning with push protection is on for the repository. Real values live
+  only in `.env`.
+- [CLAUDE.md](CLAUDE.md) is the working guide for coding sessions: rules, checks and
+  gotchas. Status and next steps are in [docs/roadmap.md](docs/roadmap.md).
 - Every change that needs it updates this README and [CHANGELOG.md](CHANGELOG.md), with a date.
