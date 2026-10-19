@@ -10,7 +10,7 @@ services:
       POSTGRES_DB: pisondev
       TZ: Asia/Jakarta
     ports:
-      - "127.0.0.1:5442:5432"
+      - "127.0.0.1:5448:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./services/api/scripts/dev-init.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
