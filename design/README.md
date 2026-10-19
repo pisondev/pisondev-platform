@@ -1,5 +1,23 @@
 # Design
 
+## Assistant documentation
+
+Reviewed on 20 Oct 2026 for `assistant.pisondev.com`. Start here before building or
+changing an assistant page:
+
+| Guide | Use it for |
+|---|---|
+| [Assistant design system](assistant-design-system.md) | Current tokens, scaled units, layout, typography, colors, component contracts, data states, and a new-page recipe |
+| [Assistant UI/UX audit](assistant-uiux-audit.md) | Route inventory, synthetic visual references, measured findings, accessibility/state gaps, and priorities |
+| [Assistant motion and loading](assistant-motion.md) | Proposed interactions, chart animation, exact skeleton geometry, custom dropdowns, overlay lifecycle, reduced motion, and implementation checks |
+
+The design system records the implemented baseline. The audit and motion guide identify
+proposed improvements; this documentation does not implement them. Public screenshots in
+[`assets/assistant/`](assets/assistant/) use synthetic data. Raw Figma exports remain
+private and ignored.
+
+## Figma source
+
 Source: Figma file "Personal Platform", page 1, mobile frames 1080 px wide:
 
 | Frame | Route |
@@ -17,7 +35,8 @@ Defined in `apps/assistant-web/src/app/globals.css`.
 - One Tailwind spacing unit = one Figma pixel, scaled to the screen; the column stops at
   480 px. Text never goes below 11 to 24 px depending on its role.
 - Font: Kaisei Opti 500/700. Chevrons: Bruno Ace SC.
-- Surfaces: page `#FAFAFA`, panel `#F0F0F0`, card `#FAFAFA`, track `#E9E9E9`, radius 18.
+- Surfaces: page `#FAFAFA`, panel `#F0F0F0`, card `#FAFAFA`, track `#E9E9E9`.
+- Card radius: 18 scaled design units (6.5 CSS px at 390 px; 8 CSS px at 480 px).
 - Text: ink `#1A1A1A`, muted `#787878`, green `#165D23`, blue `#2A5FC2`, gold `#866633`,
   maroon `#810F0F`, wine `#5D1616`, pink `#DB4B6F`.
 - Title gradient `#03310A` to `#866633`.

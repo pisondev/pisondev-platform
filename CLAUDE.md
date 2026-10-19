@@ -45,6 +45,11 @@ Design notes: [docs/architecture.md](docs/architecture.md),
 [docs/notion-sync.md](docs/notion-sync.md), [docs/finance-rules.md](docs/finance-rules.md),
 [design/README.md](design/README.md). Status and next steps: [docs/roadmap.md](docs/roadmap.md).
 
+Before assistant UI work, read the [design system](design/assistant-design-system.md),
+[UI/UX audit](design/assistant-uiux-audit.md), and [motion spec](design/assistant-motion.md).
+Reuse the shared tokens and component contracts. Fix the relevant state/accessibility
+prerequisites before adding motion; proposed behavior in those guides is not yet shipped.
+
 ## Run
 
 ```bash

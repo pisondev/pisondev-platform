@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- 2026-10-20: Assistant design-system guide with implemented tokens, responsive unit calculations,
+  component contracts, data states, and a recipe/checklist for matching new pages.
+- 2026-10-20: UI/UX audit of all assistant routes with synthetic screenshots, viewport measurements,
+  contrast checks, and prioritized usability and accessibility findings.
+- 2026-10-20: Proposed motion and loading specification covering buttons, hover, charts, quota,
+  skeleton geometry, custom dropdowns, sheets, interruption, and reduced motion.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added

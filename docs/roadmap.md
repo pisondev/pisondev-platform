@@ -16,9 +16,14 @@ Status as of 20 Oct 2026.
 
 - Notion webhook for instant Notion to app updates (the 60 s poll covers it meanwhile).
 - Optional: Cloudflare Access in front of `assistant.pisondev.com`.
+- Assistant UI foundations: request loading/refresh/error states, modal and filter
+  keyboard behavior, text contrast, and narrow navigation tiles. Follow the
+  [UI/UX audit](../design/assistant-uiux-audit.md); these improvements are planned.
 
 ## Later
 
+- Shared loading skeletons and interaction feedback, then chart/sheet animation and
+  accessible custom dropdowns, following the [motion spec](../design/assistant-motion.md).
 - Finance UI for what the API already supports: edit and delete transactions, mark a
   subscription paid (shift Next Billing), sync status page.
 - Meeting assistant at `/meeting` (rules in the automation folder's Meeting Assistant).

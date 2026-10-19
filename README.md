@@ -8,7 +8,7 @@ workspace at `assistant.pisondev.com`, starting with the Finance Assistant.
 | [`apps/assistant-web`](apps/assistant-web) | Private web app: home, `/finance`, later `/meeting` | Next.js 16, React 19, Tailwind 4 |
 | [`services/api`](services/api) | API, auth, finance rules, Notion sync | Go 1.25, Gin, PostgreSQL 17 |
 | [`docs`](docs) | Architecture, sync, finance rules, setup | |
-| [`design`](design) | How the Figma design is exported and used | |
+| [`design`](design) | Assistant design system, UI/UX audit, motion plan and Figma notes | |
 | [`deploy`](deploy) | Release build, server compose, deploy receiver and backups | Bash, Docker Compose |
 | [`scripts`](scripts), [`.githooks`](.githooks) | Commit and secret guards, shared by hooks and CI | Bash |
 
@@ -55,6 +55,15 @@ To stop: Ctrl+C in both terminals, then `docker compose stop` (data stays in the
 
 Full setup, including the Google OAuth client and the Notion integration:
 [docs/setup.md](docs/setup.md).
+
+## Assistant UI
+
+Before building a page, read the [design system](design/assistant-design-system.md) for
+tokens, layout and reusable components. The [UI/UX audit](design/assistant-uiux-audit.md)
+includes synthetic visual references and known gaps; the
+[motion and loading specification](design/assistant-motion.md) defines proposed animations,
+skeletons and custom controls. These guides document the baseline and future work;
+they do not change the running UI.
 
 ## Deployment
 
