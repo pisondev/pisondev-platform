@@ -34,6 +34,9 @@ import (
 	"github.com/pisondev/pisondev-platform/services/api/internal/platform/httpx"
 )
 
+// version is the commit the binary was built from, set with -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	cmd := "serve"
 	args := os.Args[1:]
@@ -161,17 +164,20 @@ func serve(ctx context.Context, cfg config.Config, a app, log *slog.Logger) erro
 	}
 	r := gin.New()
 	r.Use(httpx.Recover(log), httpx.Logger(log), httpx.SecurityHeaders(), httpx.BodyLimit(1<<20))
-	_ = r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	// Only the web proxy reaches the API (loopback in dev, the Docker network in production).
+	_ = r.SetTrustedProxies([]string{"127.0.0.1", "::1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
 
-	r.GET("/healthz", func(c *gin.Context) {
+	health := func(c *gin.Context) {
 		if err := a.pool.Ping(c.Request.Context()); err != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "db down"})
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "db down", "version": version})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "version": version})
+	}
+	r.GET("/healthz", health)
 
 	v1 := r.Group("/api/v1")
+	v1.GET("/health", health) // reachable through the web proxy and nginx
 	if a.webhook != nil {
 		v1.POST("/webhooks/notion", a.webhook.Handle) // signed by Notion, no session
 	}
@@ -190,7 +196,7 @@ func serve(ctx context.Context, cfg config.Config, a app, log *slog.Logger) erro
 		go a.syncer.Run(ctx)
 	}
 	go purgeSessions(ctx, a, log)
-	log.Info("api listening", "addr", cfg.HTTPAddr, "env", cfg.Env, "sync", cfg.Sync.Mode)
+	log.Info("api listening", "addr", cfg.HTTPAddr, "env", cfg.Env, "sync", cfg.Sync.Mode, "version", version)
 
 	select {
 	case err := <-errCh:
