@@ -5,6 +5,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+### Added
+
+- Production at `https://assistant.pisondev.com`: `pisondev.com` moved to Cloudflare
+  (proxied, SSL Full strict), HestiaCP domain with Let's Encrypt, nginx template proxying
+  to `127.0.0.1:3040`.
+- Continuous deployment: the `deploy` CI job builds a release (static Go binary and
+  Next.js standalone server) and ships it over SSH to `bin/receive`, which backs up the
+  database, switches releases, health-checks the new commit and rolls back on failure.
+  The deploy key is bound to that command and cannot open a shell.
+- `deploy/`: release build, server compose (web on loopback, API and Postgres on the
+  Docker network only), receiver, backup script (daily cron and before every deploy),
+  and `install.sh` for the server side.
+- `GET /api/v1/health` with the build version.
+- `docs/deployment.md`.
+
+### Changed
+
+- Local PostgreSQL moved to port 5448; 5442 is now used by another project.
+- The quick start no longer overwrites an existing `.env`.
+- The API trusts private-network proxies for client IPs (it sits behind the web server).
+
 ## [0.1.2] - 2026-10-15
 
 ### Added

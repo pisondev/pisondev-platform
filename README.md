@@ -9,6 +9,7 @@ workspace at `assistant.pisondev.com`, starting with the Finance Assistant.
 | [`services/api`](services/api) | API, auth, finance rules, Notion sync | Go 1.25, Gin, PostgreSQL 17 |
 | [`docs`](docs) | Architecture, sync, finance rules, setup | |
 | [`design`](design) | How the Figma design is exported and used | |
+| [`deploy`](deploy) | Release build, server compose, deploy receiver and backups | Bash, Docker Compose |
 | [`scripts`](scripts), [`.githooks`](.githooks) | Commit and secret guards, shared by hooks and CI | Bash |
 
 Public web (`pisondev.com`) and other private modules come later as new folders under
@@ -38,10 +39,10 @@ Needs Docker, Go 1.25 and pnpm 10.
 ```bash
 git config core.hooksPath .githooks       # once per clone: commit and secret guards
 
-docker compose up -d postgres             # PostgreSQL on 127.0.0.1:5442
+docker compose up -d postgres             # PostgreSQL on 127.0.0.1:5448
 
 cd services/api
-cp .env.example .env                      # fill in, see docs/setup.md
+[ -f .env ] || cp .env.example .env     # first time only, then fill in (docs/setup.md)
 go run ./cmd/api sync --dry-run           # preview the first Notion pull
 go run ./cmd/api                          # API on :8100
 
@@ -54,6 +55,13 @@ To stop: Ctrl+C in both terminals, then `docker compose stop` (data stays in the
 
 Full setup, including the Google OAuth client and the Notion integration:
 [docs/setup.md](docs/setup.md).
+
+## Deployment
+
+Live at <https://assistant.pisondev.com>. Every push to `main` that passes CI is built in
+GitHub Actions and shipped to the VPS, with a database backup before the switch and an
+automatic rollback if the new version does not answer. See
+[docs/deployment.md](docs/deployment.md).
 
 ## Commands
 

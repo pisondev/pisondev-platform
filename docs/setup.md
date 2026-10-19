@@ -3,7 +3,7 @@
 ## Local development
 
 1. `git config core.hooksPath .githooks`
-2. `docker compose up -d postgres`: PostgreSQL 17 on `127.0.0.1:5442`, databases
+2. `docker compose up -d postgres`: PostgreSQL 17 on `127.0.0.1:5448`, databases
    `pisondev` and `pisondev_test` (user and password `pisondev`, local only).
 3. `services/api/.env` from `.env.example`. Never commit it.
 4. `go run ./cmd/api` in `services/api` (port 8100), `pnpm dev` in `apps/assistant-web`
@@ -57,14 +57,7 @@ web app. On a new machine, after the first pull:
 Done on 15 Oct 2026: the dry run reported 0 changes, and the Rp1 round trip reached
 Notion within 6 s and the sheet within a minute, both for the new row and its deletion.
 
-## Deployment (after the domain is bought)
+## Deployment
 
-Planned shape, to be done together:
-
-- VPS with Docker: PostgreSQL, the API, the web app, and Caddy for TLS.
-- Caddy routes `assistant.pisondev.com/api/*` to the API and everything else to the web app.
-- Production `.env`: `APP_ENV=production`, `PUBLIC_BASE_URL=https://assistant.pisondev.com`,
-  `COOKIE_SECURE=true`, `AUTH_DEV_LOGIN=false`.
-- Add the production origin and redirect URI to the Google client.
-- Subscribe the Notion webhook, see [notion-sync.md](notion-sync.md#webhook-after-deployment).
-- Optional: Cloudflare Access in front of the subdomain.
+See [deployment.md](deployment.md). Once production runs, keep local `SYNC_MODE=pull`:
+production is the only writer to Notion.

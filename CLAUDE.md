@@ -38,6 +38,7 @@ knowledge that keep sessions consistent.
 | `services/api/migrations` | goose SQL, applied on startup |
 | `apps/assistant-web/src/components/screens` | one component per screen |
 | `apps/assistant-web/src/app/globals.css` | design tokens |
+| `deploy/` | release build, server compose, `receive` (deploy + rollback), `backup`, `install.sh` |
 | `design/figma/` (git-ignored) | Figma layer dump and PNGs |
 
 Design notes: [docs/architecture.md](docs/architecture.md),
@@ -47,12 +48,23 @@ Design notes: [docs/architecture.md](docs/architecture.md),
 ## Run
 
 ```bash
-docker compose up -d postgres                 # 127.0.0.1:5442
+docker compose up -d postgres                 # 127.0.0.1:5448
 cd services/api && go run ./cmd/api           # :8100, also runs the sync loop
 cd apps/assistant-web && pnpm dev             # http://localhost:3100
 ```
 
-Ports 3000, 3001, 8080, 5433 to 5440 belong to other projects on this machine.
+Ports 3000, 3001, 8080 and 5433 to 5442 belong to other projects on this machine. Never run
+`cp .env.example .env` over an existing `.env`. If it happens, VS Code local history
+(`%APPDATA%/Code/User/History`) may still hold the previous version.
+
+## Production
+
+Live at <https://assistant.pisondev.com>; every push to `main` deploys after CI
+([docs/deployment.md](docs/deployment.md)). Server: `ssh vps-hestia` (user `user_pison`,
+`~/projects/pisondev-platform`, Docker group, no passwordless sudo). Root work on HestiaCP
+goes through `ssh prinx` with `sudo`; always `nginx -t` before `systemctl reload nginx`,
+since the VPS serves other sites. Production is the only Notion writer (`SYNC_MODE=full`);
+keep local `SYNC_MODE=pull`. Never edit `authorized_keys` except by appending.
 
 ## Checks before committing
 
@@ -60,7 +72,7 @@ Ports 3000, 3001, 8080, 5433 to 5440 belong to other projects on this machine.
 cd services/api
 gofmt -l .                                    # must print nothing
 go vet ./...
-TEST_DATABASE_URL=postgres://pisondev:pisondev@localhost:5442/pisondev_test?sslmode=disable go test ./...
+TEST_DATABASE_URL=postgres://pisondev:pisondev@localhost:5448/pisondev_test?sslmode=disable go test ./...
 
 cd apps/assistant-web
 pnpm lint && pnpm exec tsc --noEmit && pnpm build
