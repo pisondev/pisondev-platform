@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
 
-// In development the browser talks only to Next.js, which forwards /api to the Go API, so
-// cookies stay first-party and no CORS is needed. In production a reverse proxy does the
-// same routing in front of both services.
+// The browser talks only to Next.js, which forwards /api to the Go API, so cookies stay
+// first-party and no CORS is needed. Rewrites are fixed at build time: production builds
+// set API_ORIGIN to the API service on the Docker network (see deploy/build-release.sh).
 const apiOrigin = process.env.API_ORIGIN ?? "http://localhost:8100";
 
 const nextConfig: NextConfig = {
+  output: "standalone", // self-contained server for the VPS, see docs/deployment.md
   poweredByHeader: false,
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiOrigin}/api/:path*` }];
