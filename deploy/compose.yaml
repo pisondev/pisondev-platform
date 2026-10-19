@@ -1,0 +1,74 @@
+# Production stack on the VPS, in ~/projects/pisondev-platform (installed by deploy/install.sh).
+# Only the web server is published, and only on loopback; nginx of HestiaCP proxies
+# assistant.pisondev.com to it. The API and the database stay on the Docker network.
+#
+# `current` is a symlink to the active release; bin/receive switches it and recreates
+# api and web. Values come from .env next to this file (mode 600, never in git).
+name: pisondev
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Asia/Jakarta
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: alpine:3.22
+    restart: always
+    user: "${APP_UID}:${APP_GID}"
+    working_dir: /app
+    command: ["/app/api", "serve"]
+    env_file: .env
+    environment:
+      HTTP_ADDR: ":8100"
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+    volumes:
+      - ./current/api:/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8100/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  web:
+    image: node:22-alpine
+    restart: always
+    user: "${APP_UID}:${APP_GID}"
+    working_dir: /app
+    command: ["node", "server.js"]
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./current/web:/app:ro
+    ports:
+      - "127.0.0.1:${WEB_PORT}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  db-data:

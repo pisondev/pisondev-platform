@@ -52,3 +52,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.log
+
+# Release builds (deploy/build-release.sh)
+dist/
