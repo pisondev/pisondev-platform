@@ -96,3 +96,64 @@ jobs:
       - run: pnpm lint
       - run: pnpm exec tsc --noEmit
       - run: pnpm build
+
+  deploy:
+    name: Deploy to the VPS
+    needs: [guards, api, web]
+    # What reaches main goes live; pull requests are checked, not deployed.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: ${{ vars.PUBLIC_ORIGIN }}
+    # One deploy at a time; a newer push waits for the one before it.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.sum
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 10
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/assistant-web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: apps/assistant-web
+
+      - name: Build the release
+        run: bash deploy/build-release.sh "$GITHUB_SHA"
+
+      # The key may run bin/receive on the server and nothing else (docs/deployment.md).
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf 'Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n  StrictHostKeyChecking yes\n' \
+            "$VPS_HOST" "$VPS_USER" > ~/.ssh/config
+
+      - name: Deploy
+        run: ssh vps < dist/release.tar.gz
+
+      - name: Check the public site
+        env:
+          PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
+        run: |
+          host=${PUBLIC_ORIGIN#https://}
+          if ! getent hosts "$host" >/dev/null; then
+            echo "::warning::$host does not resolve yet; the server already confirmed the new version locally."
+            exit 0
+          fi
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "$PUBLIC_ORIGIN/api/v1/health" | tee /dev/stderr | grep -q "\"version\":\"$GITHUB_SHA\""
