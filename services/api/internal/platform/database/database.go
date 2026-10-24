@@ -35,8 +35,22 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// Migrate applies every pending migration.
+// migrateLockKey is the Postgres advisory lock held while migrating.
+const migrateLockKey = 7202610240
+
+// Migrate applies every pending migration. An advisory lock keeps two processes (two
+// instances, or test packages run in parallel) from applying the same one twice.
 func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, migrateLockKey); err != nil {
+		return fmt.Errorf("migrate lock: %w", err)
+	}
+	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, migrateLockKey)
+
 	db := stdlib.OpenDBFromPool(pool)
 	defer db.Close()
 	goose.SetBaseFS(migrations.FS)
