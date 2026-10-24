@@ -14,8 +14,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 2026-10-20: Proposed motion and loading specification covering buttons, hover, charts, quota,
   skeleton geometry, custom dropdowns, sheets, interruption, and reduced motion.
 
+- 2026-10-24: Link shortener API (`internal/links`, schema `links`): short links on their
+  own listener (`LINKS_ADDR`) that only redirects, case-insensitive slugs that are never
+  reused, random slugs without look-alike characters, expiry and disable, visits recorded
+  in batches without IP addresses (bots logged, not counted), and stats per day, referrer,
+  country and device. Management under `/api/v1/links`. See `docs/links.md`.
+- 2026-10-24: Server compose publishes the short-link listener on `127.0.0.1:3042`
+  (`LINKS_PORT`) for the coming `go.pisondev.com`.
+
 ### Fixed
 
+- 2026-10-24: Migrations run under a Postgres advisory lock, so two processes (or test
+  packages in parallel) never apply the same migration at once.
 - 2026-10-24: Notion sync no longer makes a duplicate page (and so a duplicate
   transaction in the app and the sheet) when a page create times out or gets a server
   error after Notion already made it. Creates are retried only on rate limits and refused

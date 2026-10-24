@@ -22,6 +22,7 @@ type Config struct {
 	Notion  Notion
 	Sync    Sync
 	Finance Finance
+	Links   Links
 }
 
 type Auth struct {
@@ -45,6 +46,12 @@ type Notion struct {
 type Sync struct {
 	Mode     string // off, pull, full
 	Interval time.Duration
+}
+
+type Links struct {
+	Addr    string // listener of the short host; empty: no redirects served
+	BaseURL string // public origin of the short host, e.g. https://go.pisondev.com
+	HomeURL string // where the bare short host redirects; empty: a not-found page
 }
 
 type Finance struct {
@@ -87,6 +94,11 @@ func Load() (Config, error) {
 			Account:            get("FINANCE_ACCOUNT", "Mandiri Debit"),
 			AnchorSubscription: get("FINANCE_ANCHOR_SUBSCRIPTION", "Claude"),
 			ExcludeMarker:      get("FINANCE_EXCLUDE_MARKER", "dikecualikan dari kuota"),
+		},
+		Links: Links{
+			Addr:    get("LINKS_ADDR", ""),
+			BaseURL: strings.TrimRight(get("LINKS_BASE_URL", "http://localhost:8101"), "/"),
+			HomeURL: get("LINKS_HOME_URL", ""),
 		},
 	}
 
@@ -147,6 +159,14 @@ func (c Config) validate() []error {
 		}
 	default:
 		errs = append(errs, fmt.Errorf("SYNC_MODE must be off, pull or full, got %q", c.Sync.Mode))
+	}
+	for _, v := range []struct{ key, raw string }{{"LINKS_BASE_URL", c.Links.BaseURL}, {"LINKS_HOME_URL", c.Links.HomeURL}} {
+		if v.raw == "" && v.key == "LINKS_HOME_URL" {
+			continue
+		}
+		if u, err := url.Parse(v.raw); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, fmt.Errorf("%s must be an http(s) URL, got %q", v.key, v.raw))
+		}
 	}
 	if c.Sync.Interval < 10*time.Second {
 		errs = append(errs, errors.New("SYNC_INTERVAL must be at least 10s"))

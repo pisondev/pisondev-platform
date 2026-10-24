@@ -28,6 +28,7 @@ import (
 	"github.com/pisondev/pisondev-platform/services/api/internal/auth"
 	"github.com/pisondev/pisondev-platform/services/api/internal/config"
 	"github.com/pisondev/pisondev-platform/services/api/internal/finance"
+	"github.com/pisondev/pisondev-platform/services/api/internal/links"
 	"github.com/pisondev/pisondev-platform/services/api/internal/notionsync"
 	"github.com/pisondev/pisondev-platform/services/api/internal/platform/clock"
 	"github.com/pisondev/pisondev-platform/services/api/internal/platform/database"
@@ -115,6 +116,9 @@ type app struct {
 	finance  *finance.Service
 	syncer   *notionsync.Syncer
 	webhook  *notionsync.Webhook
+	links    *links.Service
+	clicks   *links.Recorder
+	redirect *links.Redirector
 	pool     *pgxpool.Pool
 }
 
@@ -152,6 +156,11 @@ func wire(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) app {
 		MinBalance:         cfg.Finance.MinBalance,
 		ExcludeMarker:      cfg.Finance.ExcludeMarker,
 	}, clock.System, notifier, writable)
+
+	linkStore := links.NewStore(pool)
+	a.links = links.NewService(linkStore, cfg.Links.BaseURL, clock.System)
+	a.clicks = links.NewRecorder(linkStore, log)
+	a.redirect = links.NewRedirector(linkStore, a.clicks, cfg.Links.HomeURL, clock.System, log)
 	return a
 }
 
@@ -185,28 +194,45 @@ func serve(ctx context.Context, cfg config.Config, a app, log *slog.Logger) erro
 	private := v1.Group("", httpx.SameOrigin(cfg.PublicBaseURL), a.auth.Require())
 	a.auth.Register(public, private)
 	finance.NewHandler(a.finance).Register(private)
+	links.NewHandler(a.links).Register(private)
 	private.GET("/sync", notionsync.StatusHandler(a.pool, a.syncer))
 	private.POST("/sync", notionsync.TriggerHandler(a.syncer))
 	r.NoRoute(func(c *gin.Context) { httpx.Fail(c, httpx.NotFound("No such route.")) })
 
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: r, ReadHeaderTimeout: 10 * time.Second}
-	errCh := make(chan error, 1)
-	go func() { errCh <- srv.ListenAndServe() }()
+	servers := []*http.Server{{Addr: cfg.HTTPAddr, Handler: r, ReadHeaderTimeout: 10 * time.Second}}
+	// The short host gets its own listener that serves redirects only.
+	if cfg.Links.Addr != "" {
+		servers = append(servers, &http.Server{Addr: cfg.Links.Addr, Handler: a.redirect.Handler(health), ReadHeaderTimeout: 10 * time.Second})
+	}
+	errCh := make(chan error, len(servers))
+	for _, srv := range servers {
+		go func() { errCh <- srv.ListenAndServe() }()
+	}
+	// Click recording outlives the listeners, so visits answered during shutdown are kept.
+	clicksCtx, stopClicks := context.WithCancel(context.Background())
+	go a.clicks.Run(clicksCtx)
 	if a.syncer != nil {
 		go a.syncer.Run(ctx)
 	}
 	go purgeSessions(ctx, a, log)
-	log.Info("api listening", "addr", cfg.HTTPAddr, "env", cfg.Env, "sync", cfg.Sync.Mode, "version", version)
+	log.Info("api listening", "addr", cfg.HTTPAddr, "links", cfg.Links.Addr, "env", cfg.Env, "sync", cfg.Sync.Mode, "version", version)
 
+	var runErr error
 	select {
-	case err := <-errCh:
-		return err
+	case runErr = <-errCh:
 	case <-ctx.Done():
 	}
 	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	log.Info("shutting down")
-	return srv.Shutdown(shutdown)
+	for _, srv := range servers {
+		if err := srv.Shutdown(shutdown); err != nil && runErr == nil {
+			runErr = err
+		}
+	}
+	stopClicks()
+	a.clicks.Wait()
+	return runErr
 }
 
 func purgeSessions(ctx context.Context, a app, log *slog.Logger) {

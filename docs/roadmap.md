@@ -1,6 +1,6 @@
 # Roadmap
 
-Status as of 20 Oct 2026.
+Status as of 24 Oct 2026.
 
 ## Done
 
@@ -14,7 +14,12 @@ Status as of 20 Oct 2026.
 
 ## Next
 
+- Link shortener at `go.pisondev.com`: the API side is built ([links.md](links.md));
+  still to do are the `/links` page in the assistant app (list, create, edit, stats, QR
+  code) and the go-live steps (DNS, HestiaCP domain, server `.env` and compose).
 - Notion webhook for instant Notion to app updates (the 60 s poll covers it meanwhile).
+  Set `NOTION_WEBHOOK_TOKEN`, or verify right after creating the subscription: until a
+  token exists, the first verification request to arrive is the one stored.
 - Optional: Cloudflare Access in front of `assistant.pisondev.com`.
 - Assistant UI foundations: request loading/refresh/error states, modal and filter
   keyboard behavior, text contrast, and narrow navigation tiles. Follow the

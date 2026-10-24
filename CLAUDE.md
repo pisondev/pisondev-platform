@@ -34,6 +34,7 @@ knowledge that keep sessions consistent.
 |---|---|
 | `services/api/internal/auth` | Google OIDC, allowlist (`AUTH_ALLOWED_EMAILS`, first = main), sessions |
 | `services/api/internal/finance` | entities, rules (`calc.go`, `subs.go`, `cashflow.go`), repository, handlers |
+| `services/api/internal/links` | link shortener: slugs, redirect listener (`LINKS_ADDR`), batched visits ([docs/links.md](docs/links.md)) |
 | `services/api/internal/notionsync` | Notion client, 3-way merge, sync loop, webhook |
 | `services/api/migrations` | goose SQL, applied on startup |
 | `apps/assistant-web/src/components/screens` | one component per screen |

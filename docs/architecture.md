@@ -10,6 +10,7 @@ services/
     cmd/api/              entry point and CLI commands
     internal/auth/        Google sign-in, allowlist, sessions
     internal/finance/     entities, rules, repository, HTTP handlers
+    internal/links/       link shortener: redirect listener, visits, management API
     internal/notionsync/  Notion client, merge, sync loop, webhook
     internal/platform/    config-free helpers: clock, database, httpx
     internal/config/      environment
@@ -31,7 +32,8 @@ therefore first-party and CORS is not needed.
 | `GET /healthz` | public |
 | `GET /api/v1/auth/config`, `/auth/google/login`, `/auth/google/callback` | public |
 | `POST /api/v1/webhooks/notion` | Notion signature (HMAC-SHA256) |
-| `/api/v1/auth/me`, `/auth/logout`, `/api/v1/finance/*`, `/api/v1/sync` | session |
+| `/api/v1/auth/me`, `/auth/logout`, `/api/v1/finance/*`, `/api/v1/links/*`, `/api/v1/sync` | session |
+| `GET /<slug>` on the short host (`LINKS_ADDR`, own listener) | public, redirects only ([links.md](links.md)) |
 
 Finance routes:
 
@@ -66,8 +68,9 @@ Responses are `{"data": ...}` or `{"error": {"code", "message", "details"}}`.
 ## Data
 
 PostgreSQL schemas: `auth` (sessions), `finance` (transactions, subscriptions, weeks,
-audit log), `sync` (select options, sync state, settings). Every finance write records the
-signed-in account in `created_by`/`updated_by` and in `finance.audit_log`.
+audit log), `sync` (select options, sync state, settings), `links` (short links, visits).
+Every finance write records the signed-in account in `created_by`/`updated_by` and in
+`finance.audit_log`.
 
 Dates keep the WIB wall clock: an instant plus a `has_time` flag, so "2026-10-01" and
 "2026-10-01 12:30" both survive the round trip through Notion and the sheet.
