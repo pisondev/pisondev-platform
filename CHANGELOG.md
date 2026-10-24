@@ -20,7 +20,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in batches without IP addresses (bots logged, not counted), and stats per day, referrer,
   country and device. Management under `/api/v1/links`. See `docs/links.md`.
 - 2026-10-24: Server compose publishes the short-link listener on `127.0.0.1:3042`
-  (`LINKS_PORT`) for the coming `go.pisondev.com`.
+  (`LINKS_PORT`); `go.pisondev.com` is live behind Cloudflare and HestiaCP nginx.
 
 ### Fixed
 

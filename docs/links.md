@@ -73,9 +73,9 @@ Every link in a response carries `shortUrl`, built from `LINKS_BASE_URL`.
 | `LINKS_HOME_URL` | empty | Where the bare short host redirects |
 | `LINKS_PORT` | `3042` | Server only: loopback port nginx proxies the short host to |
 
-## Going live
+## Going live (done 24 Oct 2026)
 
-The code ships with the normal deploy and does nothing until these are done:
+The code ships with the normal deploy; the short host needed these one-time steps:
 
 1. **Cloudflare**: `A go → 103.87.67.77`, DNS only at first (for the certificate), then
    proxied.
@@ -84,9 +84,12 @@ The code ships with the normal deploy and does nothing until these are done:
    `v-add-web-domain user_pison go.pisondev.com 103.87.67.77 no none`,
    `v-change-web-domain-tpl user_pison go.pisondev.com pisondev-links no`,
    `v-add-letsencrypt-domain user_pison go.pisondev.com`,
-   `v-add-web-domain-ssl-force user_pison go.pisondev.com`, and
-   `nginx -t && systemctl reload nginx`.
+   `v-add-web-domain-ssl-force user_pison go.pisondev.com`,
+   `v-add-web-domain-ssl-hsts user_pison go.pisondev.com`, and
+   `nginx -t && systemctl reload nginx`. Never list the certificate with
+   `v-list-web-domain-ssl ... plain`: it prints the private key.
 3. **Server**: add `LINKS_BASE_URL`, `LINKS_HOME_URL` and `LINKS_PORT` to `.env`
    ([template](../deploy/server.env.example)), run `deploy/install.sh` to copy the new
-   `compose.yaml`, then `docker compose up -d --force-recreate api web`.
+   `compose.yaml`, then `docker compose up -d --force-recreate api web`. The `.env` from
+   before is kept as `backups/env-before-links.bak`.
 4. Check: `curl -I https://go.pisondev.com/healthz` and a test link.

@@ -113,7 +113,10 @@ by hand.
    `PUBLIC_ORIGIN`.
 6. **Google**: in the `pisondev-platform` OAuth client, origin `https://assistant.pisondev.com`
    and redirect `https://assistant.pisondev.com/api/v1/auth/google/callback`.
-7. **Notion webhook**: see [notion-sync.md](notion-sync.md#webhook-after-deployment); the
+7. **Short host** `go.pisondev.com` (24 Oct 2026): Cloudflare `A go`, proxied; HestiaCP
+   template `pisondev-links` proxying to `127.0.0.1:3042`, Let's Encrypt, forced SSL and
+   HSTS. Steps in [links.md](links.md#going-live-done-24-oct-2026).
+8. **Notion webhook**: see [notion-sync.md](notion-sync.md#webhook-after-deployment); the
    token is printed with
    `docker compose exec api /app/api webhook-token`.
 
