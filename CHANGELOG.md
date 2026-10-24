@@ -14,6 +14,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 2026-10-20: Proposed motion and loading specification covering buttons, hover, charts, quota,
   skeleton geometry, custom dropdowns, sheets, interruption, and reduced motion.
 
+### Fixed
+
+- 2026-10-24: Notion sync no longer makes a duplicate page (and so a duplicate
+  transaction in the app and the sheet) when a page create times out or gets a server
+  error after Notion already made it. Creates are retried only on rate limits and refused
+  connections, and the next run links the page that a lost create made.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added

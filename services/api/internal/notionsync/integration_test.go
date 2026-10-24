@@ -28,12 +28,15 @@ type fakeNotion struct {
 	pages  map[string]*fakePage
 	nextID int
 	writes []string // "PATCH id", "POST db"
+	// loseCreates makes the next creates succeed but answer 502, like a lost response.
+	loseCreates int
 }
 
 type fakePage struct {
 	id, db   string
 	archived bool
 	props    map[string]json.RawMessage
+	created  time.Time
 	edited   time.Time
 }
 
@@ -44,6 +47,7 @@ func newFakeNotion() *fakeNotion {
 func (f *fakeNotion) pageJSON(p *fakePage) map[string]any {
 	return map[string]any{
 		"id": p.id, "archived": p.archived, "in_trash": false,
+		"created_time":     p.created.Truncate(time.Minute).Format(time.RFC3339),
 		"last_edited_time": p.edited.Format(time.RFC3339),
 		"parent":           map[string]string{"database_id": p.db},
 		"properties":       p.props,
@@ -125,11 +129,17 @@ func (f *fakeNotion) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = json.Unmarshal(body, &req)
 		f.nextID++
-		p := &fakePage{id: fmt.Sprintf("page%04d", f.nextID), db: req.Parent.DatabaseID, props: map[string]json.RawMessage{}}
+		p := &fakePage{id: fmt.Sprintf("page%04d", f.nextID), db: req.Parent.DatabaseID, props: map[string]json.RawMessage{}, created: time.Now()}
 		f.blank(p)
 		f.setProps(p, req.Properties)
 		f.pages[p.id] = p
 		f.writes = append(f.writes, "POST "+p.db)
+		if f.loseCreates > 0 {
+			f.loseCreates--
+			w.WriteHeader(502)
+			write(map[string]string{"code": "bad_gateway", "message": "lost"})
+			return
+		}
 		write(f.pageJSON(p))
 	case r.Method == "PATCH" && len(parts) == 2 && parts[0] == "pages":
 		p, ok := f.pages[parts[1]]
@@ -171,7 +181,7 @@ func (f *fakeNotion) seed(db string, vals []string) string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.nextID++
-	p := &fakePage{id: fmt.Sprintf("page%04d", f.nextID), db: db, props: map[string]json.RawMessage{}, edited: time.Now()}
+	p := &fakePage{id: fmt.Sprintf("page%04d", f.nextID), db: db, props: map[string]json.RawMessage{}, created: time.Now(), edited: time.Now()}
 	for i, fl := range f.dbs[db] {
 		v, _ := toNotion(vals[i], fl)
 		raw, _ := json.Marshal(v)
@@ -472,6 +482,51 @@ func TestSyncDryRunChangesNothing(t *testing.T) {
 	snap, _ := h.svc.Snapshot(context.Background())
 	if len(snap.Transactions) != 0 {
 		t.Error("dry run wrote to Postgres")
+	}
+}
+
+// A create that reached Notion but lost its answer is linked, not made twice, and an edit
+// made meanwhile is still pushed.
+func TestSyncLostCreateAnswerMakesNoDuplicate(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	f := h.fake
+	tr, err := h.svc.AddTransaction(ctx, "test", finance.AddInput{Type: "Keluar", Name: "Kopi", Amount: 1, Category: "Makan", Date: today(0)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.loseCreates = 1
+	if _, err := h.syncer.RunOnce(ctx, Options{}); err == nil {
+		t.Fatal("the lost answer should fail the run")
+	}
+	if n := len(f.livePages(dbTrx)); n != 1 {
+		t.Fatalf("Notion transactions = %d, want 1 (one create, not retried)", n)
+	}
+	if _, err := h.svc.UpdateTransaction(ctx, "test", tr.ID, finance.PatchInput{Notes: strp("dikecualikan dari kuota")}); err != nil {
+		t.Fatal(err)
+	}
+
+	if c := h.sync(Options{}); len(c) != 1 || c[0].Action != "link" {
+		t.Fatalf("second run should link the lost page, got %+v", c)
+	}
+	h.sync(Options{})
+	pages := f.livePages(dbTrx)
+	if len(pages) != 1 {
+		t.Fatalf("Notion transactions = %d, want 1", len(pages))
+	}
+	if got := f.value(t, pages[0].id, "Notes"); got != "dikecualikan dari kuota" {
+		t.Errorf("edit made after the lost create was not pushed, Notes = %q", got)
+	}
+	var pageID string
+	if err := h.pool.QueryRow(ctx, `SELECT notion_page_id FROM finance.transactions WHERE id = $1`, tr.ID).Scan(&pageID); err != nil {
+		t.Fatal(err)
+	}
+	if pageID != pages[0].id {
+		t.Errorf("row linked to %q, want %q", pageID, pages[0].id)
+	}
+	if c := h.sync(Options{}); len(c) != 0 {
+		t.Errorf("should settle, got %+v", c)
 	}
 }
 

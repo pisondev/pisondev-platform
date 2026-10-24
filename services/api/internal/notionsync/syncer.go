@@ -61,12 +61,31 @@ type Syncer struct {
 
 	wake chan struct{}
 	mu   sync.Mutex // one cycle at a time inside this process
+
+	// creates holds, per local row id, the page creations not yet linked to the row. A
+	// create whose answer was lost may still have made the page; the next cycle links
+	// that page instead of making a second one. Guarded by mu.
+	creates map[string][]createAttempt
 }
+
+// createAttempt is one CreatePage call: when it was sent and the values it carried.
+type createAttempt struct {
+	at     time.Time
+	values []string
+}
+
+// A lost page matches an attempt when Notion's created_time (rounded down to the
+// minute) falls in this window around the attempt.
+const (
+	createdBefore = 2 * time.Minute
+	createdAfter  = 10 * time.Minute
+	attemptMaxAge = 24 * time.Hour
+)
 
 func NewSyncer(client *Client, db *pgxpool.Pool, tables []Table, saveOptions func(ctx context.Context, table, property string, opts []string) error,
 	mode string, interval time.Duration, log *slog.Logger) *Syncer {
 	return &Syncer{client: client, db: db, tables: tables, options: saveOptions, mode: mode, interval: interval, log: log,
-		wake: make(chan struct{}, 1)}
+		wake: make(chan struct{}, 1), creates: map[string][]createAttempt{}}
 }
 
 func (s *Syncer) Mode() string { return s.mode }
@@ -141,6 +160,12 @@ func (s *Syncer) RunOnce(ctx context.Context, opt Options) ([]Change, error) {
 	}
 	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockKey)
 
+	for id, attempts := range s.creates {
+		if time.Since(attempts[len(attempts)-1].at) > attemptMaxAge {
+			delete(s.creates, id)
+		}
+	}
+
 	var all []Change
 	var errs []error
 	for _, t := range s.tables {
@@ -174,10 +199,11 @@ type remote struct {
 }
 
 type action struct {
-	kind   string // create, merge, insert, archive, purge, deleteLocal, revive, recreate
+	kind   string // create, link, merge, insert, archive, purge, deleteLocal, revive, recreate
 	row    finance.SyncRow
 	remote remote
 	merge  mergeResult
+	sent   []string // link: the values the lost create carried
 }
 
 func (s *Syncer) syncTable(ctx context.Context, t Table, opt Options) ([]Change, error) {
@@ -211,13 +237,31 @@ func (s *Syncer) syncTable(ctx context.Context, t Table, opt Options) ([]Change,
 		return nil, err
 	}
 
-	var acts []action
 	linked := map[string]bool{}
 	for _, row := range rows {
-		pid := bare(row.PageID)
-		if pid != "" {
+		if pid := bare(row.PageID); pid != "" {
 			linked[pid] = true
 		}
+	}
+	// lost finds the page made by an earlier create of row whose answer never arrived.
+	lost := func(row finance.SyncRow) (action, bool) {
+		for _, at := range s.creates[row.ID] {
+			for pid, rem := range remotes {
+				ct := rem.page.CreatedTime
+				if linked[pid] || ct.Before(at.at.Add(-createdBefore)) || ct.After(at.at.Add(createdAfter)) ||
+					!sameOwnFields(at.values, rem.values, fields) {
+					continue
+				}
+				linked[pid] = true
+				return action{kind: "link", row: row, remote: rem, sent: at.values}, true
+			}
+		}
+		return action{}, false
+	}
+
+	var acts []action
+	for _, row := range rows {
+		pid := bare(row.PageID)
 		rem, onRemote := remotes[pid]
 		switch {
 		case row.Deleted:
@@ -235,7 +279,11 @@ func (s *Syncer) syncTable(ctx context.Context, t Table, opt Options) ([]Change,
 			}
 		case pid == "":
 			if !pullOnly && titleIdx >= 0 && row.Values[titleIdx] != "" {
-				acts = append(acts, action{kind: "create", row: row})
+				if a, ok := lost(row); ok {
+					acts = append(acts, a)
+				} else {
+					acts = append(acts, action{kind: "create", row: row})
+				}
 			}
 		case onRemote:
 			m := merge(row.Values, rem.values, row.Base, fields, pullOnly)
@@ -245,7 +293,11 @@ func (s *Syncer) syncTable(ctx context.Context, t Table, opt Options) ([]Change,
 		case row.Base != nil && equal(row.Values, row.Base):
 			acts = append(acts, action{kind: "deleteLocal", row: row}) // deleted in Notion
 		case !pullOnly:
-			acts = append(acts, action{kind: "recreate", row: row}) // edited here, gone there
+			if a, ok := lost(row); ok {
+				acts = append(acts, a)
+			} else {
+				acts = append(acts, action{kind: "recreate", row: row}) // edited here, gone there
+			}
 		}
 	}
 	for pid, rem := range remotes {
@@ -360,11 +412,26 @@ func (s *Syncer) apply(ctx context.Context, t Table, a action, fields []finance.
 		if err != nil {
 			return err
 		}
+		// Recorded first: a failed call may still have made the page (see creates).
+		s.creates[a.row.ID] = append(s.creates[a.row.ID], createAttempt{at: time.Now(), values: a.row.Values})
 		page, err := s.client.CreatePage(ctx, t.DBID, props)
 		if err != nil {
 			return err
 		}
-		return store.Link(ctx, a.row.ID, bare(page.ID), a.row.Values)
+		if err := store.Link(ctx, a.row.ID, bare(page.ID), a.row.Values); err != nil {
+			return err
+		}
+		delete(s.creates, a.row.ID)
+		return nil
+
+	case "link":
+		// An earlier create made this page but its answer was lost. The values it carried
+		// become the base, so edits made since are pushed on the next cycle.
+		if err := store.Link(ctx, a.row.ID, bare(a.remote.page.ID), a.sent); err != nil {
+			return err
+		}
+		delete(s.creates, a.row.ID)
+		return nil
 
 	case "archive":
 		archived := true
@@ -419,6 +486,19 @@ func (s *Syncer) checkSchema(ctx context.Context, t Table, opt Options) error {
 		}
 	}
 	return nil
+}
+
+// sameOwnFields compares the fields the app writes; external fields are the sheet's.
+func sameOwnFields(a, b []string, fields []finance.Field) bool {
+	if len(a) != len(fields) || len(b) != len(fields) {
+		return false
+	}
+	for i, f := range fields {
+		if !f.External && a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func nonEmpty(vals []string) map[int]bool {

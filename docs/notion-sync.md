@@ -64,6 +64,14 @@ anything. Run `api sync --force` when the deletion is intended.
 
 Writes carry the row version: a sync never overwrites an edit made during the run.
 
+Requests to Notion are retried on rate limits and server errors, except page creation:
+a create whose answer is lost may still have made the page, so it is repeated only on a
+rate limit or a refused connection. The syncer remembers each create until the row is
+linked. On the next run, a page that is not linked to any row, carries the values that
+create sent, and was created within minutes of it is linked to the row (action `link`)
+instead of a second page being made. Edits made since then are pushed the run after.
+This memory lives in the process; a restart in that window can still leave a duplicate.
+
 ## Webhook (after deployment)
 
 1. In Notion, integration `pisondev-platform` > Webhooks, subscribe

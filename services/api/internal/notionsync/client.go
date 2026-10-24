@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,6 +51,7 @@ type Page struct {
 	ID             string    `json:"id"`
 	Archived       bool      `json:"archived"`
 	InTrash        bool      `json:"in_trash"`
+	CreatedTime    time.Time `json:"created_time"` // Notion rounds it down to the minute
 	LastEditedTime time.Time `json:"last_edited_time"`
 	Parent         struct {
 		DatabaseID string `json:"database_id"`
@@ -68,7 +71,15 @@ type Database struct {
 	} `json:"properties"`
 }
 
+// do sends a request that is safe to repeat.
 func (c *Client) do(ctx context.Context, method, path string, body, out any) error {
+	return c.send(ctx, method, path, body, out, true)
+}
+
+// send retries rate limits, refused connections and, when idempotent, server errors and
+// lost answers. A request that is not idempotent (creating a page) is repeated only when
+// Notion surely did not act on it: a second try after a lost answer makes a duplicate.
+func (c *Client) send(ctx context.Context, method, path string, body, out any, idempotent bool) error {
 	var payload []byte
 	if body != nil {
 		var err error
@@ -86,7 +97,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		req.Header.Set("Content-Type", "application/json")
 		res, err := c.http.Do(req)
 		if err != nil {
-			if attempt < 3 && ctx.Err() == nil {
+			if (idempotent || notSent(err)) && attempt < 3 && ctx.Err() == nil {
 				sleep(ctx, backoff(attempt, ""))
 				continue
 			}
@@ -100,7 +111,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 			}
 			return json.Unmarshal(data, out)
 		}
-		retry := res.StatusCode == 429 || res.StatusCode == 409 || res.StatusCode >= 500
+		retry := res.StatusCode == 429 || idempotent && (res.StatusCode == 409 || res.StatusCode >= 500)
 		if retry && attempt < 4 && ctx.Err() == nil {
 			sleep(ctx, backoff(attempt, res.Header.Get("Retry-After")))
 			continue
@@ -115,6 +126,12 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		}
 		return apiErr
 	}
+}
+
+// notSent reports a transport error from before the request left: no connection was made.
+func notSent(err error) bool {
+	var op *net.OpError
+	return errors.As(err, &op) && op.Op == "dial"
 }
 
 func backoff(attempt int, retryAfter string) time.Duration {
@@ -176,9 +193,9 @@ func (c *Client) GetPage(ctx context.Context, id string) (Page, error) {
 
 func (c *Client) CreatePage(ctx context.Context, dbID string, props map[string]any) (Page, error) {
 	var p Page
-	err := c.do(ctx, http.MethodPost, "/pages", map[string]any{
+	err := c.send(ctx, http.MethodPost, "/pages", map[string]any{
 		"parent": map[string]string{"database_id": dbID}, "properties": props,
-	}, &p)
+	}, &p, false)
 	return p, err
 }
 
