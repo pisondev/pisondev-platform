@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 /** Page title block: optional back link, gradient title, subtitle, divider. */
 export function PageHeader({ title, subtitle, back }: { title: string; subtitle?: ReactNode; back?: string }) {
@@ -82,5 +82,39 @@ export function Chevron({ className = "" }: { className?: string }) {
     <span aria-hidden className={`font-chevron leading-none ${className}`}>
       &gt;
     </span>
+  );
+}
+
+const BUTTON_VARIANTS = {
+  primary: "bg-[linear-gradient(90deg,var(--color-green),var(--color-gold))] px-40 font-bold text-white",
+  secondary: "bg-panel px-32 text-ink hover:bg-track",
+  danger: "bg-panel px-32 text-maroon hover:bg-track",
+  text: "px-8 text-blue underline underline-offset-2 hover:text-ink",
+};
+
+/**
+ * Shared button: the action families of the design (gradient primary, panel secondary,
+ * blue text action) with a visible keyboard focus ring, a 44 px minimum touch target
+ * and a busy state that keeps the button's place and blocks repeats.
+ */
+export function Button({
+  variant = "secondary",
+  busy = false,
+  className = "",
+  disabled,
+  children,
+  type = "button",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof BUTTON_VARIANTS; busy?: boolean }) {
+  return (
+    <button
+      type={type}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+      className={`inline-flex min-h-[44px] items-center justify-center rounded-card text-body transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_VARIANTS[variant]} ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
   );
 }

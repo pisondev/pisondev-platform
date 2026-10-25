@@ -211,13 +211,16 @@ The visual treatment can remain the same.
 
 Hub uses a two-column grid with `px-85 gap-60 mt-60`, tile `p-32`, and `h-292`.
 Finance uses `px-106 gap-60 mt-58`, tile `p-28`, and the same height.
-Subscriptions uses sky/blue; Finance and Quota use mint/green. A ready module is a
-`Link`; Meeting is currently an `aria-disabled` noninteractive `div` at 60% opacity.
+Subscriptions and Links use sky/blue; Finance and Quota use mint/green. A ready module is
+a `Link`; Meeting is currently an `aria-disabled` noninteractive `div` at 60% opacity.
 
-There is no shared `Button` component yet. Existing action families are the gradient
-primary action, panel secondary action, blue underlined text action, and the circular
-add button `max(34px, 68s)`. **Proposed:** extract these families with consistent focus,
-hover, press, disabled, and busy behavior before adding more one-off buttons.
+`Button({ variant, busy, ...button props })` in `ui.tsx` (added 24 Oct 2026, used by
+Links) holds the action families: `primary` (green-to-gold gradient, bold white),
+`secondary` (panel), `danger` (panel, maroon text), and `text` (blue underlined). Every
+variant has a 44 CSS px minimum height, a visible `focus-visible` green outline, and
+disabled styling; `busy` disables it and sets `aria-busy`, so a pending action cannot be
+repeated. It defaults to `type="button"`. Older screens still use inline buttons and the
+circular add button `max(34px, 68s)`; move them to `Button` when they are next changed.
 
 ### `DataTable<T>`
 
@@ -311,10 +314,13 @@ negative, estimated, and failed values; never turn a failed request into a belie
 Keep Indonesian storage values such as `Masuk`, `Keluar`, and the exclusion marker
 inside the existing data contract while displaying English control labels.
 
-Existing `useApi` retains previous data during reload/path changes, but its `loading`
-flag is only initialized on mount. It has no explicit refreshing state, cancellation,
-cache, or user retry control. The `alive` guard suppresses stale effect results.
-Before adding animated refresh, implement the loading contract in the motion guide.
+`useApi` retains previous data during reload/path changes. Since 24 Oct 2026 it reports
+`loading` (nothing has arrived for the current request yet) and `refreshing` (a newer
+request is pending while earlier data is shown), both derived from the request the data
+belongs to. An error stays until a request succeeds. It has no cancellation or cache;
+screens offer retry by calling `reload`. The `alive` guard suppresses stale results.
+Links shows the pattern: `Loading...` without data, `Refreshing...` beside the heading
+with data, and an inline error with Try again.
 
 Every new data section must define: initial loading, ready, empty, refreshing with prior
 data, error without data, error with prior data, and unauthorized redirect. Mutations
