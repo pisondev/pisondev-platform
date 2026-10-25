@@ -21,6 +21,7 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) Register(g *gin.RouterGroup) {
 	l := g.Group("/links")
 	l.GET("", h.list)
+	l.GET("/config", h.config)
 	l.POST("", h.create)
 	l.GET("/:id", h.get)
 	l.PATCH("/:id", h.update)
@@ -40,6 +41,11 @@ func (h *Handler) list(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, http.StatusOK, out)
+}
+
+// config tells the app where short links live, for previews before any link exists.
+func (h *Handler) config(c *gin.Context) {
+	httpx.OK(c, http.StatusOK, gin.H{"baseUrl": h.svc.baseURL})
 }
 
 func (h *Handler) create(c *gin.Context) {
