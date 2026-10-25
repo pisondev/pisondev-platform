@@ -38,17 +38,29 @@ export function dateRange(start?: string, end?: string): string {
   return `${MONTHS[s.m - 1]} ${s.d} - ${MONTHS[e.m - 1]} ${e.d}`;
 }
 
-/** Current WIB wall time as "YYYY-MM-DD HH:mm", for new transactions. */
-export function nowWIB(): string {
-  const f = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date());
+const wibFormat = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Jakarta",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** An instant as WIB wall time "YYYY-MM-DDTHH:mm", the value of a datetime-local input. */
+export function toWIB(instant: string | Date): string {
+  const f = wibFormat.formatToParts(typeof instant === "string" ? new Date(instant) : instant);
   const get = (t: string) => f.find((p) => p.type === t)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+/** WIB wall time "YYYY-MM-DDTHH:mm" as an RFC 3339 instant. WIB has no daylight saving. */
+export function fromWIB(local: string): string {
+  return `${local}:00+07:00`;
+}
+
+/** Current WIB wall time as "YYYY-MM-DDTHH:mm", for new transactions. */
+export function nowWIB(): string {
+  return toWIB(new Date());
 }

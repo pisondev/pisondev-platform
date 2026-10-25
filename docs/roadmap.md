@@ -4,6 +4,7 @@ Status as of 24 Oct 2026.
 
 ## Done
 
+- Link shortener at `go.pisondev.com` with the `/links` page ([links.md](links.md)).
 - Private assistant workspace: Google sign-in for the two allowed accounts, Finance
   dashboard, Subscriptions, Weekly Spending Quota, add transaction.
 - PostgreSQL in two-way sync with Notion (and through it the Google Sheet).
@@ -14,9 +15,6 @@ Status as of 24 Oct 2026.
 
 ## Next
 
-- Link shortener: `go.pisondev.com` is live and the API is built ([links.md](links.md));
-  still to do is the `/links` page in the assistant app (list, create, edit, stats, QR
-  code).
 - Notion webhook for instant Notion to app updates (the 60 s poll covers it meanwhile).
   Set `NOTION_WEBHOOK_TOKEN`, or verify right after creating the subscription: until a
   token exists, the first verification request to arrive is the one stored.

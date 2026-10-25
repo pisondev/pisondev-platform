@@ -22,6 +22,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 2026-10-24: Server compose publishes the short-link listener on `127.0.0.1:3042`
   (`LINKS_PORT`); `go.pisondev.com` is live behind Cloudflare and HestiaCP nginx.
 
+- 2026-10-24: `/links` page and Hub tile: create links (custom or random slug), copy,
+  QR code with PNG download, 30-day visits by day, referrer, country and device, edit,
+  pause and delete with an inline confirmation. `GET /api/v1/links/config` gives the
+  short-link origin. Uses `qrcode-generator` 2.0.4 (MIT, no dependencies).
+- 2026-10-24: Shared `Button` in the assistant app (primary, secondary, danger, text) with
+  visible keyboard focus, a 44 px touch target and a busy state.
+
+### Changed
+
+- 2026-10-24: `useApi` reports `refreshing` while a reload or new path is pending with
+  earlier data shown, and `loading` only while nothing has arrived yet.
+
 ### Fixed
 
 - 2026-10-24: Migrations run under a Postgres advisory lock, so two processes (or test

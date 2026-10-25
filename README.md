@@ -5,7 +5,7 @@ workspace at `assistant.pisondev.com`, starting with the Finance Assistant.
 
 | Path | What | Stack |
 |---|---|---|
-| [`apps/assistant-web`](apps/assistant-web) | Private web app: home, `/finance`, later `/meeting` | Next.js 16, React 19, Tailwind 4 |
+| [`apps/assistant-web`](apps/assistant-web) | Private web app: home, `/finance`, `/links`, later `/meeting` | Next.js 16, React 19, Tailwind 4 |
 | [`services/api`](services/api) | API, auth, finance rules, Notion sync, link shortener | Go 1.25, Gin, PostgreSQL 17 |
 | [`docs`](docs) | Architecture, sync, finance rules, link shortener, setup | |
 | [`design`](design) | Assistant design system, UI/UX audit, motion plan and Figma notes | |

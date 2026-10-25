@@ -91,3 +91,35 @@ export type Quota = {
 };
 
 export type Options = Record<string, string[]>;
+
+// Shapes returned by the link shortener (services/api/internal/links).
+
+export type ShortLink = {
+  id: string;
+  slug: string;
+  shortUrl: string;
+  target: string;
+  title: string;
+  notes: string;
+  enabled: boolean;
+  expiresAt: string | null; // RFC 3339 instant
+  clicks: number; // human visits; bots are logged, not counted
+  lastClickedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+};
+
+export type LinkConfig = { baseUrl: string };
+
+export type LinkCount = { key: string; count: number };
+
+export type LinkStats = {
+  days: number;
+  total: number;
+  bots: number;
+  daily: LinkCount[]; // key: YYYY-MM-DD in WIB, every day present
+  referrers: LinkCount[];
+  countries: LinkCount[];
+  devices: LinkCount[];
+};

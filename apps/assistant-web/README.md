@@ -24,6 +24,7 @@ pnpm lint && pnpm exec tsc --noEmit && pnpm build
 | `/finance` | Balance, cash flow, links |
 | `/finance/subscriptions` | Subscriptions chart and tables |
 | `/finance/quota` | Weekly quota, recent expenses, savings, add transaction |
+| `/links` | Short links on `go.pisondev.com`: create, copy, QR code, visits, edit, pause, delete |
 
 `src/proxy.ts` sends visitors without a session cookie to `/login`; the API still checks
 the session on every request.

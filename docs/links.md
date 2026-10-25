@@ -1,6 +1,7 @@
 # Link shortener
 
-Short links on their own host, `go.pisondev.com/<slug>`, managed from the assistant app.
+Short links on their own host, `go.pisondev.com/<slug>`, managed from the assistant app
+at `/links` (create, copy, QR code as SVG or PNG, 30-day visits, edit, pause, delete).
 Only the allowed accounts create links; anyone can follow one.
 
 ## Why a subdomain
@@ -56,6 +57,7 @@ Session-protected, under `/api/v1/links`:
 | Method and path | Purpose |
 |---|---|
 | `GET /links?q=&limit=` | Live links, newest first; `q` searches slug, target and title |
+| `GET /links/config` | `{baseUrl}`, for slug previews before any link exists |
 | `POST /links` | `{target, slug?, title?, notes?, expiresAt?}`; `409 slug_taken` if used |
 | `GET /links/:id` | One link |
 | `PATCH /links/:id` | Any of `target`, `slug`, `title`, `notes`, `enabled`, `expiresAt` (`""` clears) |
