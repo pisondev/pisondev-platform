@@ -1,4 +1,5 @@
 import { rupiah } from "@/lib/format";
+import type { CSSProperties } from "react";
 
 const FILL = {
   green: "linear-gradient(90deg, #59ceba, #5cd38a)",
@@ -40,14 +41,16 @@ export function ProgressBar({
 
   return (
     <div
-      className="relative mx-85 h-67 overflow-hidden rounded-card bg-track text-heading font-bold"
+      className="motion-quota relative mx-85 h-67 overflow-hidden rounded-card bg-track text-heading font-bold"
+      style={{ "--quota-target": `${width}%` } as CSSProperties}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(width)}
       aria-label="Weekly quota used"
+      aria-valuetext={`${percent}% used, ${rupiah(spent)} of ${rupiah(max)}`}
     >
-      {fill ? <div className="absolute inset-y-0 left-0 rounded-card" style={{ width: `${width}%`, background: fill }} /> : null}
+      {fill ? <div className="absolute inset-y-0 left-0 rounded-card" style={{ width: "var(--quota-fill)", background: fill }} /> : null}
       <div className={`text-glow absolute inset-0 flex items-center justify-between px-32 ${TONE[level]}`}>
         <span className="truncate">{label(false)}</span>
         <span>{percent}%</span>
@@ -56,7 +59,7 @@ export function ProgressBar({
         <div
           aria-hidden
           className="text-glow absolute inset-0 flex items-center px-32 text-white"
-          style={{ clipPath: `inset(0 ${100 - width}% 0 0)` }}
+          style={{ clipPath: "inset(0 calc(100% - var(--quota-fill)) 0 0)" }}
         >
           <span className="truncate">{label(true)}</span>
         </div>

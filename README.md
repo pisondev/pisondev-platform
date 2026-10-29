@@ -61,9 +61,12 @@ Full setup, including the Google OAuth client and the Notion integration:
 Before building a page, read the [design system](design/assistant-design-system.md) for
 tokens, layout and reusable components. The [UI/UX audit](design/assistant-uiux-audit.md)
 includes synthetic visual references and known gaps; the
-[motion and loading specification](design/assistant-motion.md) defines proposed animations,
-skeletons and custom controls. These guides document the baseline and future work;
-they do not change the running UI.
+[motion and loading specification](design/assistant-motion.md) tracks shipped animations
+and future skeletons and custom controls. Shipped motion preserves the existing layout: quick
+currency counters, chart drawing and bar growth, quota-fill transitions, sliding filter
+pills, hover/press feedback, and transaction-sheet entrance/exit with keyboard focus
+containment. All motion respects the system reduced-motion setting. See the shipped
+scope in [the motion guide](design/assistant-motion.md#shipped-motion-30-oct-2026).
 
 ## Deployment
 

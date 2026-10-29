@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-10-30: Assistant motion without a layout redesign: fast currency counters,
+  viewport-triggered chart bars and line drawing, synchronized quota fill/text clipping,
+  sliding filter pills, section/row entrances, navigation hover and button press feedback,
+  animated link details, and transaction sheet entrance/exit. Reduced motion shows final
+  values and shapes immediately. No animation dependency added.
+
 - 2026-10-20: Assistant design-system guide with implemented tokens, responsive unit calculations,
   component contracts, data states, and a recipe/checklist for matching new pages.
 - 2026-10-20: UI/UX audit of all assistant routes with synthetic screenshots, viewport measurements,
@@ -35,6 +41,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   earlier data shown, and `loading` only while nothing has arrived yet.
 
 ### Fixed
+
+- 2026-10-30: Transaction sheet traps/restores keyboard focus, locks background scrolling,
+  blocks dismissal and repeat submissions while saving, and cleans up interrupted exits.
+  Segmented filters expose pressed-button semantics. Zero chart values have no fake bar.
 
 - 2026-10-24: Migrations run under a Postgres advisory lock, so two processes (or test
   packages in parallel) never apply the same migration at once.

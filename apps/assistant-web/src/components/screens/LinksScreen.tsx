@@ -6,6 +6,7 @@ import { fromWIB, shortDate, toWIB } from "@/lib/format";
 import type { LinkConfig, LinkCount, LinkStats, ShortLink } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { QrCode } from "../QrCode";
+import { ChartMarks } from "../Motion";
 import { Button, Card, PageHeader, Panel } from "../ui";
 
 type Announce = (message: string) => void;
@@ -241,7 +242,7 @@ function LinkItem({
   const detailsId = useId();
   const state = !link.enabled ? "Paused" : expired(link) ? "Expired" : "";
   return (
-    <li>
+    <li className="motion-feedback">
       <Card className="px-28 py-24">
         <div className="flex items-start justify-between gap-16">
           <div className="min-w-0">
@@ -264,7 +265,7 @@ function LinkItem({
           </div>
         </div>
         {open ? (
-          <div id={detailsId} className="mt-24 grid gap-40 border-t border-line pt-28">
+          <div id={detailsId} className="motion-feedback mt-24 grid gap-40 border-t border-line pt-28">
             <a href={link.target} target="_blank" rel="noopener noreferrer" className="text-small break-all text-blue underline">
               {link.target}
             </a>
@@ -333,11 +334,13 @@ function DailyBars({ daily }: { daily: LinkCount[] }) {
     <figure className="mt-16">
       <svg viewBox="0 0 300 64" role="img" aria-label={summary} className="h-auto w-full" preserveAspectRatio="none">
         <line x1="0" y1="63.5" x2="300" y2="63.5" stroke="var(--color-line)" strokeWidth="1" />
-        {daily.map((d, i) =>
-          d.count ? (
-            <rect key={d.key} x={i * w + w * 0.15} width={w * 0.7} y={64 - (d.count / max) * 60} height={(d.count / max) * 60} rx="1.5" fill="var(--color-leaf)" />
-          ) : null,
-        )}
+        <ChartMarks signature={JSON.stringify(daily)}>
+          {daily.map((d, i) =>
+            d.count ? (
+              <rect className="motion-bar" style={{ transformOrigin: "0px 64px", animationDelay: `${Math.min(i, 5) * 30}ms` }} key={d.key} x={i * w + w * 0.15} width={w * 0.7} y={64 - (d.count / max) * 60} height={(d.count / max) * 60} rx="1.5" fill="var(--color-leaf)" />
+            ) : null,
+          )}
+        </ChartMarks>
       </svg>
       {daily.length ? (
         <figcaption className="flex justify-between text-small text-muted">

@@ -55,8 +55,8 @@ export function DataTable<T>({
           rows.map((row, i) => (
             <div
               key={rowKey(row, i)}
-              className={`grid items-center gap-x-12 border-b border-line px-6 last:border-b-0 ${rowClassName?.(row, i) ?? ""}`}
-              style={{ ...grid, minHeight: rowHeight, ...rowStyle?.(row, i) }}
+              className={`motion-row grid items-center gap-x-12 border-b border-line px-6 last:border-b-0 ${rowClassName?.(row, i) ?? ""}`}
+              style={{ ...grid, minHeight: rowHeight, animationDelay: `${Math.min(i, 3) * 25}ms`, ...rowStyle?.(row, i) }}
             >
               {columns.map((c) => (
                 <span

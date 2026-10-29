@@ -1,10 +1,42 @@
 # Assistant motion and loading specification
 
-Proposed on 20 Oct 2026 for `assistant.pisondev.com`. This is an implementation plan,
-not a record of shipped animations. The current app has toggle color transitions and a
-few hover/focus states; charts, sheet transitions, skeletons, and page entrances are not
-animated. Use the [design system](assistant-design-system.md) for existing geometry and
-the [audit](assistant-uiux-audit.md) for prerequisites.
+Proposed on 20 Oct 2026 for `assistant.pisondev.com`. The shipped scope below updates
+that plan; the remaining sections describe future work. Use the
+[design system](assistant-design-system.md) for existing geometry and the
+[audit](assistant-uiux-audit.md) for prerequisites.
+
+## Shipped motion (30 Oct 2026)
+
+- `Motion.tsx`: 480 ms whole-rupiah counters for Balance, Remaining and subscription
+  totals. Final accessible text is stable and reserves the final width; animation frames
+  update only a decorative text node. Updates start from the current amount and cancel
+  obsolete frames. Hidden tabs and reduced-motion changes settle immediately.
+- SVG data marks reveal once when visible, using 420 ms baseline-anchored bar growth,
+  at most 150 ms stagger, normalized line drawing and fading points/guides. Filters
+  replace only the data marks; labels, axes and controls stay fixed. Zero and negative
+  bar values use zero height; negative amounts remain explicit in labels.
+- Quota fill width and white-label clipping share one registered percentage property,
+  including initial entry and updates. Unsupported CSS falls back to final geometry.
+- Existing sections and new rows fade/rise briefly. Ready tiles lift 2 px on fine-pointer
+  hover; buttons press slightly. Keyboard focus remains visible. Measured filter pills
+  slide with resize-aware bounds; their buttons use `aria-pressed` filter semantics.
+- Transaction sheets fade/slide in and out, retain modality through the exit, contain
+  focus, make the background inert, lock scrolling and restore the opener on cleanup.
+  Saving holds dismissal, disables fields and blocks repeated requests. Success closes
+  through the same exit timing. Timers clean up on route unmount; preference changes
+  finish an active exit immediately.
+- Link details, new link rows and visit bars share the motion primitives. Native select
+  menus remain native. Skeletons, custom dropdowns, row removal/layout interpolation
+  and richer chart tooltips remain future work.
+- CSS motion runs only with `prefers-reduced-motion: no-preference`; changing the
+  preference immediately restores final shapes. No motion package or permanent
+  `will-change` layer is used.
+
+Local browser checks use synthetic API responses only. Install the optional runner
+with `npm install --prefix services/api/tmp/motion-browser playwright`, start the app
+on port 3100, then run `node scripts/assistant-motion-smoke.mjs`. The test covers final
+values, interrupted motion, filters, quota clipping, sheet focus/save/exit lifecycle,
+reduced motion, viewport widths, and link details. No production writes are performed.
 
 ## 1. Motion principles
 

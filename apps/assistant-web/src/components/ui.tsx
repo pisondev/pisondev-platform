@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useLayoutEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { AnimatedMoney } from "./Motion";
 
 /** Page title block: optional back link, gradient title, subtitle, divider. */
 export function PageHeader({ title, subtitle, back }: { title: string; subtitle?: ReactNode; back?: string }) {
   return (
-    <header className="px-85 pt-50">
+    <header className="assistant-header px-85 pt-50">
       {back ? (
         <Link href={back} className="-ml-14 inline-block text-heading text-muted hover:text-ink">
           &lt; Back
@@ -20,7 +23,7 @@ export function PageHeader({ title, subtitle, back }: { title: string; subtitle?
 }
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`mx-85 rounded-card bg-panel p-22 ${className}`}>{children}</section>;
+  return <section className={`motion-panel mx-85 rounded-card bg-panel p-22 ${className}`}>{children}</section>;
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -28,12 +31,12 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 }
 
 /** Label with a value, like "Balance : Rp87.000". */
-export function Figure({ label, value, tone = "green" }: { label: string; value: string; tone?: "green" | "maroon" }) {
+export function Figure({ label, value, tone = "green" }: { label: string; value: string | number; tone?: "green" | "maroon" }) {
   return (
     <p className="flex items-baseline gap-24 px-85 text-heading">
       <span className="text-label-gradient w-[34%] shrink-0">{label}</span>
       <span>:</span>
-      <span className={`font-bold ${tone === "green" ? "text-green" : "text-maroon"}`}>{value}</span>
+      <span className={`font-bold ${tone === "green" ? "text-green" : "text-maroon"}`}>{typeof value === "number" ? <AnimatedMoney value={value} /> : value}</span>
     </p>
   );
 }
@@ -52,16 +55,36 @@ export function Toggle<T extends string>({
   onChange: (v: T) => void;
   className?: string;
 }) {
+  const track = useRef<HTMLDivElement>(null);
+  const pill = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const node = track.current;
+    const indicator = pill.current;
+    if (!node || !indicator) return;
+    const measure = () => {
+      const selected = node.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+      if (!selected) return;
+      indicator.style.width = `${selected.offsetWidth}px`;
+      indicator.style.height = `${selected.offsetHeight}px`;
+      indicator.style.transform = `translate(${selected.offsetLeft}px, ${selected.offsetTop}px)`;
+      node.dataset.measured = "true";
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [value, options]);
+
   return (
-    <div role="tablist" className={`inline-flex rounded-card bg-panel p-8 ${className}`}>
+    <div ref={track} role="group" aria-label="View" className={`motion-toggle relative inline-flex rounded-card bg-panel p-8 ${className}`}>
+      <span ref={pill} aria-hidden className="motion-pill pointer-events-none absolute top-0 left-0 rounded-card bg-card shadow-[0_1px_2px_rgb(0_0_0/0.04)]" />
       {options.map((o) => (
         <button
           key={o.value}
-          role="tab"
           type="button"
-          aria-selected={o.value === value}
+          aria-pressed={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`min-w-143 rounded-card px-18 py-8 text-small transition-colors ${
+          className={`relative min-w-143 rounded-card px-18 py-8 text-small transition-colors ${
             o.value === value ? "bg-card text-ink shadow-[0_1px_2px_rgb(0_0_0/0.04)]" : "text-muted hover:text-ink"
           }`}
         >
@@ -74,7 +97,7 @@ export function Toggle<T extends string>({
 
 /** Loading, error and empty states in the page's own typography. */
 export function Note({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "error" }) {
-  return <p className={`px-85 py-24 text-body ${tone === "error" ? "text-maroon" : "text-muted"}`}>{children}</p>;
+  return <p className={`motion-feedback px-85 py-24 text-body ${tone === "error" ? "text-maroon" : "text-muted"}`}>{children}</p>;
 }
 
 export function Chevron({ className = "" }: { className?: string }) {
@@ -111,10 +134,10 @@ export function Button({
       type={type}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={`inline-flex min-h-[44px] items-center justify-center rounded-card text-body transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_VARIANTS[variant]} ${className}`}
+      className={`motion-button inline-flex min-h-[44px] items-center justify-center rounded-card text-body transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_VARIANTS[variant]} ${className}`}
       {...props}
     >
-      {children}
+      <span className={busy ? "motion-busy" : undefined}>{children}</span>
     </button>
   );
 }

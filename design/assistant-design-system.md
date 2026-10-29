@@ -7,6 +7,12 @@ extending it. Proposed changes are marked **proposed**; they are not shipped fea
 Read the [UI/UX audit](assistant-uiux-audit.md) for known gaps and the
 [motion specification](assistant-motion.md) for animation and loading behavior.
 
+Motion added on 30 Oct 2026 keeps this visual baseline. Currency counters, SVG marks,
+quota fills, filter pills, interactions and transaction sheets now animate, with
+reduced-motion support. Filters use pressed buttons; transaction sheets now contain
+and restore focus, lock scrolling, and hold dismissal during saves. The baseline
+descriptions below predate those changes; see the shipped scope in the motion guide.
+
 ## 1. Product and visual direction
 
 Assistant is a private workspace for quick personal tasks. Finance is the first module.

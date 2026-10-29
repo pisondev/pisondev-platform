@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
 import { nowWIB } from "@/lib/format";
 import type { Options, Transaction } from "@/lib/types";
@@ -41,17 +42,74 @@ export function AddTransactionSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; fields?: Record<string, unknown>; duplicate?: boolean }>();
   const first = useRef<HTMLInputElement>(null);
+  const form = useRef<HTMLFormElement>(null);
+  const saving = useRef(false);
+  const mounted = useRef(false);
+  const dismissing = useRef(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const afterExit = useRef(onClose);
+  const [closing, setClosing] = useState(false);
   const titleId = useId();
 
+  const close = useCallback(() => {
+    if (saving.current || dismissing.current) return;
+    dismissing.current = true;
+    afterExit.current = onClose;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return onClose();
+    setClosing(true);
+    exitTimer.current = setTimeout(onClose, 180);
+  }, [onClose]);
+
   useEffect(() => {
-    first.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    mounted.current = true;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const background = document.querySelector("main");
+    const wasInert = background?.inert ?? false;
+    const overflow = document.body.style.overflow;
+    if (background) background.inert = true;
+    document.body.style.overflow = "hidden";
+    first.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); close(); }
+      if (e.key !== "Tab") return;
+      const controls = Array.from(form.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
+      ) ?? []).filter((node) => node.getClientRects().length > 0);
+      const start = controls[0], end = controls[controls.length - 1];
+      if (!start) { e.preventDefault(); form.current?.focus(); return; }
+      if (e.shiftKey && (document.activeElement === start || document.activeElement === form.current)) {
+        e.preventDefault(); end.focus();
+      } else if (!e.shiftKey && (document.activeElement === end || !form.current?.contains(document.activeElement))) {
+        e.preventDefault(); start.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      mounted.current = false;
+      clearTimeout(exitTimer.current);
+      window.removeEventListener("keydown", onKey);
+      if (background) background.inert = wasInert;
+      document.body.style.overflow = overflow;
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, [close]);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const finish = () => {
+      if (preference.matches && dismissing.current) {
+        clearTimeout(exitTimer.current);
+        afterExit.current();
+      }
+    };
+    preference.addEventListener("change", finish);
+    return () => preference.removeEventListener("change", finish);
   }, [onClose]);
 
   async function submit(e: FormEvent | null, allowDuplicate = false) {
     e?.preventDefault();
+    if (saving.current || dismissing.current || !options) return;
+    saving.current = true;
     setBusy(true);
     setError(undefined);
     let finalNotes = notes.trim();
@@ -70,17 +128,27 @@ export function AddTransactionSheet({
         weeklyAllowance: kind === "Masuk" && allowance,
         allowDuplicate,
       });
+      if (!mounted.current) return;
       setName("");
       setAmount("");
       setNotes("");
       setExcluded(false);
       setAllowance(false);
-      onSaved(t);
+      dismissing.current = true;
+      afterExit.current = () => onSaved(t);
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        onSaved(t);
+      } else {
+        setClosing(true);
+        exitTimer.current = setTimeout(() => afterExit.current(), 180);
+      }
     } catch (err) {
+      if (!mounted.current) return;
       const a = err as ApiError;
       setError({ message: a.message, fields: a.details, duplicate: a.code === "duplicate" });
     } finally {
-      setBusy(false);
+      saving.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
 
@@ -88,16 +156,19 @@ export function AddTransactionSheet({
   const categories = options?.Category ?? [];
   const accounts = options?.Account ?? ["Mandiri Debit"];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={onClose}>
+  return createPortal(
+    <div data-closing={closing} className="transaction-overlay fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={close}>
       <form
+        ref={form}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="scroll-thin max-h-[92dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[max(16px,calc(var(--spacing)*40))] bg-page px-60 pt-40 pb-60 shadow-2xl"
+        className="transaction-sheet scroll-thin max-h-[92dvh] w-full max-w-[480px] overflow-y-auto rounded-t-[max(16px,calc(var(--spacing)*40))] bg-page px-60 pt-40 pb-60 shadow-2xl"
       >
+        <fieldset disabled={busy || closing} className="contents">
         <div className="mx-auto mb-24 h-10 w-120 rounded-full bg-line" />
         <div className="flex items-center justify-between">
           <h2 id={titleId} className="text-heading-red text-heading">
@@ -123,7 +194,7 @@ export function AddTransactionSheet({
             {fieldError("amount")}
           </Field>
           {kind === "Keluar" ? (
-            <Field label="Category">
+            <Field label="Category" animated>
               <select value={category} onChange={(e) => setCategory(e.target.value)} className={input}>
                 {categories.map((c) => (
                   <option key={c}>{c}</option>
@@ -160,7 +231,7 @@ export function AddTransactionSheet({
         </div>
 
         {error ? (
-          <div className="mt-28 rounded-card bg-panel p-24 text-body text-maroon">
+          <div role="alert" className="motion-feedback mt-28 rounded-card bg-panel p-24 text-body text-maroon">
             {error.message}
             {error.duplicate ? (
               <button type="button" onClick={() => submit(null, true)} className="mt-12 block text-blue underline">
@@ -171,29 +242,32 @@ export function AddTransactionSheet({
         ) : null}
 
         <div className="mt-40 flex gap-24">
-          <button type="button" onClick={onClose} className="flex-1 rounded-card bg-panel py-24 text-body text-muted">
+          <button type="button" onClick={close} disabled={busy || closing} className="flex-1 rounded-card bg-panel py-24 text-body text-muted disabled:opacity-60">
             Cancel
           </button>
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || closing || !options}
+            aria-busy={busy || undefined}
             className="flex-[2] rounded-card py-24 text-body font-bold text-white disabled:opacity-60"
             style={{ background: "linear-gradient(90deg, #165d23, #866633)" }}
           >
-            {busy ? "Saving..." : "Save"}
+            <span className={busy ? "motion-busy" : undefined}>{busy ? "Saving..." : "Save"}</span>
           </button>
         </div>
+        </fieldset>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 const input =
   "w-full rounded-card border border-line bg-card px-24 py-16 text-body text-ink outline-none focus:border-green focus:ring-2 focus:ring-green/20";
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, animated = false }: { label: string; children: ReactNode; animated?: boolean }) {
   return (
-    <label className="grid gap-8">
+    <label className={`grid gap-8 ${animated ? "motion-feedback" : ""}`}>
       <span className="text-small text-muted">{label}</span>
       {children}
     </label>

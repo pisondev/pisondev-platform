@@ -31,7 +31,7 @@ export function QuotaScreen() {
       {q ? (
         <>
           <div className="mt-28">
-            <Figure label="Remaining" value={rupiah(q.remaining)} tone={q.remaining < 0 ? "maroon" : "green"} />
+            <Figure label="Remaining" value={q.remaining} tone={q.remaining < 0 ? "maroon" : "green"} />
           </div>
           <div className="mt-20">
             <ProgressBar spent={q.spent} max={q.max} percent={q.percent} level={q.level} />
@@ -40,7 +40,7 @@ export function QuotaScreen() {
             Your quota for next week<span className="mx-16">:</span>
             <b>{rupiah(q.nextWeekMax)}</b>
           </p>
-          {saved ? <p className="mt-12 px-100 text-small text-green">{saved}</p> : null}
+          {saved ? <p role="status" className="motion-feedback mt-12 px-100 text-small text-green">{saved}</p> : null}
 
           <Panel className="mt-56">
             <div className="flex items-center justify-between px-10 pb-12">

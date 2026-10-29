@@ -106,3 +106,126 @@ body {
   background: linear-gradient(180deg, #d3ad5c, #ce6359);
   border-radius: 4px;
 }
+
+/* Motion is scoped to assistant screens; geometry, palette and typography stay fixed. */
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-panel: 240ms;
+  --motion-chart: 420ms;
+  --motion-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@property --quota-fill {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+:where(main:has(.assistant-header), .transaction-overlay) :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+.motion-pill { visibility: hidden; }
+.motion-quota { --quota-fill: var(--quota-target); }
+.motion-toggle[data-measured] .motion-pill { visibility: visible; }
+.motion-toggle[data-measured] button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes assistant-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes assistant-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes assistant-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes assistant-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes assistant-sheet {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes assistant-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(main:has(.assistant-header), .transaction-overlay) :is(a, button, input, select, textarea) {
+    transition: color var(--motion-fast), background-color var(--motion-fast), border-color var(--motion-fast),
+      box-shadow var(--motion-fast), opacity var(--motion-fast), transform var(--motion-fast) var(--motion-ease-out);
+  }
+  :where(main:has(.assistant-header), .transaction-overlay) :is(button, a.rounded-card):not(:disabled, [aria-disabled="true"]):active {
+    transform: scale(0.975);
+    transition-duration: 80ms;
+  }
+  .assistant-header ~ :is(div, nav):not(.fixed), .motion-panel {
+    animation: assistant-enter var(--motion-panel) var(--motion-ease-out) both;
+  }
+  .motion-panel ~ .motion-panel { animation-delay: 35ms; }
+  .motion-row, .motion-feedback {
+    animation: assistant-enter var(--motion-base) var(--motion-ease-out) both;
+  }
+  .motion-pill {
+    transition: transform var(--motion-base) var(--motion-ease-standard), width var(--motion-base) var(--motion-ease-standard);
+  }
+  .motion-toggle button:active { transform: none !important; }
+  .motion-bar { transform-box: view-box; }
+  .motion-chart[data-motion="waiting"] :is(.motion-bar, .motion-line, .motion-chart-detail) { opacity: 0; }
+  .motion-chart[data-motion="ready"] .motion-bar {
+    animation: assistant-bar var(--motion-chart) var(--motion-ease-out) both;
+  }
+  .motion-chart[data-motion="ready"] .motion-line {
+    stroke-dasharray: 1;
+    animation: assistant-line var(--motion-chart) var(--motion-ease-standard) both;
+  }
+  .motion-chart[data-motion="ready"] .motion-chart-detail {
+    animation: assistant-fade var(--motion-base) ease-out 180ms both;
+  }
+  .motion-quota {
+    transition: --quota-fill var(--motion-chart) var(--motion-ease-out);
+    @starting-style { --quota-fill: 0%; }
+  }
+  .transaction-overlay {
+    animation: assistant-fade var(--motion-base) ease-out both;
+    transition: opacity var(--motion-base) ease-in;
+  }
+  .transaction-sheet {
+    animation: assistant-sheet var(--motion-panel) var(--motion-ease-out) both;
+    transition: transform var(--motion-base) ease-in, opacity var(--motion-base) ease-in;
+  }
+  .transaction-overlay[data-closing="true"] { opacity: 0; animation: none; }
+  .transaction-overlay[data-closing="true"] .transaction-sheet {
+    animation: none;
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  .motion-busy::before {
+    content: "";
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    margin-right: 0.5em;
+    vertical-align: -0.05em;
+    border: 1.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: assistant-spin 900ms linear infinite;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  main:has(.assistant-header) a.rounded-card:not([aria-disabled="true"]):hover { transform: translateY(-2px); }
+  main:has(.assistant-header) a.rounded-card .font-chevron { transition: transform var(--motion-fast) var(--motion-ease-out); }
+  main:has(.assistant-header) a.rounded-card:hover .font-chevron { transform: translateX(2px); }
+  :where(main:has(.assistant-header), .transaction-overlay) button:not(:disabled):not([aria-pressed]):hover {
+    filter: brightness(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(main:has(.assistant-header), .transaction-overlay) *,
+  :where(main:has(.assistant-header), .transaction-overlay) *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

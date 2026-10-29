@@ -6,6 +6,7 @@ import type { SubItem, Subscriptions } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { MONTHLY_SWATCHES, SubscriptionChart, YEARLY_SWATCHES } from "../Charts";
 import { DataTable } from "../DataTable";
+import { AnimatedMoney } from "../Motion";
 import { Card, Note, PageHeader, Panel, Toggle } from "../ui";
 
 type Cycle = "monthly" | "yearly";
@@ -45,7 +46,7 @@ export function SubscriptionsScreen() {
 
         <div className="flex items-center justify-between px-6 pb-16">
           <h2 className="text-heading-red text-heading">{cycle === "monthly" ? "Monthly" : "Yearly"} Subscription</h2>
-          <span className="rounded-card bg-card px-20 py-6 text-body font-bold text-maroon">-{rupiah(group.total)}</span>
+          <span className="rounded-card bg-card px-20 py-6 text-body font-bold text-maroon">{data ? <>-<AnimatedMoney value={group.total} /></> : loading ? "..." : "-"}</span>
         </div>
         <Card>
           <DataTable<SubItem>

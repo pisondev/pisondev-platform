@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { rupiah, shortDate, signedRupiah } from "@/lib/format";
+import { shortDate, signedRupiah } from "@/lib/format";
 import type { Cashflow, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { CashflowChart } from "../Charts";
@@ -33,7 +33,7 @@ export function FinanceDashboard() {
       <PageHeader title="Finance Assistant" subtitle="My personal finance tracker" back="/" />
 
       <div className="mt-28">
-        {summary.error ? <Note tone="error">{summary.error.message}</Note> : <Figure label="Balance" value={summary.data ? rupiah(summary.data.balance) : "..."} />}
+        {summary.error ? <Note tone="error">{summary.error.message}</Note> : <Figure label="Balance" value={summary.data ? summary.data.balance : "..."} />}
       </div>
 
       <Panel className="mt-24">
