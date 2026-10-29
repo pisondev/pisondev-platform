@@ -30,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`${kaisei.variable} ${bruno.variable} antialiased`}>
       <body className="min-h-dvh">
-        <main className="mx-auto min-h-dvh w-full max-w-[480px] bg-page pb-120">{children}</main>
+        {children}
       </body>
     </html>
   );

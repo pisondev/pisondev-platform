@@ -9,7 +9,7 @@ import { Chevron, PageHeader } from "../ui";
 const ASSISTANTS = [
   { href: "/finance", title: "Finance", note: "Balance, quota, subscriptions", bg: "bg-mint", fg: "text-green", ready: true },
   { href: "/links", title: "Links", note: "Short links, QR and visits", bg: "bg-sky", fg: "text-blue", ready: true },
-  { href: "/meeting", title: "Meeting", note: "Coming soon", bg: "bg-sky", fg: "text-blue", ready: false },
+  { href: "/meeting", title: "Meeting", note: "Find a time together", bg: "bg-sky", fg: "text-blue", ready: true },
 ];
 
 export function Hub() {

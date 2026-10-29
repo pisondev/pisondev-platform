@@ -7,11 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-10-30: Released Meeting availability on the assistant host with public demo and
+  invitations, owner sign-in, response persistence, and calendar export.
+
 - 2026-10-30: Assistant motion without a layout redesign: fast currency counters,
   viewport-triggered chart bars and line drawing, synchronized quota fill/text clipping,
   sliding filter pills, section/row entrances, navigation hover and button press feedback,
   animated link details, and transaction sheet entrance/exit. Reduced motion shows final
   values and shapes immediately. No animation dependency added.
+- 2026-10-27: Meeting availability at `/meeting/availability`: guided creation, public
+  invitations, 15-minute availability painting, touch and keyboard selection, group
+  heatmap, participant filters, duration-aware recommendations, time-zone display,
+  owner confirmation/reopen, and calendar export. Includes a synthetic interactive demo.
+- 2026-10-27: Go Meeting module and PostgreSQL schema with owner-protected management,
+  hashed response keys, idempotent guest creation, optimistic versions, transactional
+  confirmation, and public reads. Domain, database, and browser lifecycle tests.
+  Analysis and rollout notes are in `docs/meeting.md`.
 
 - 2026-10-20: Assistant design-system guide with implemented tokens, responsive unit calculations,
   component contracts, data states, and a recipe/checklist for matching new pages.
@@ -37,10 +48,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-10-27: Enabled the Meeting Hub tile. Existing Assistant pages share a route-group
+  layout without URL changes; Meeting has a separate wide responsive visual system.
+
 - 2026-10-24: `useApi` reports `refreshing` while a reload or new path is pending with
   earlier data shown, and `loading` only while nothing has arrived yet.
 
 ### Fixed
+
+- 2026-10-30: Display repeated daylight-saving hours in chronological order, with their
+  distinct offsets retained in accessible labels.
 
 - 2026-10-30: Transaction sheet traps/restores keyboard focus, locks background scrolling,
   blocks dismissal and repeat submissions while saving, and cleans up interrupted exits.

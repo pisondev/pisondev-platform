@@ -4,6 +4,10 @@ Baseline: 20 Oct 2026, commit `bda2a62`. Scope: `assistant.pisondev.com`, implem
 `apps/assistant-web`. This guide records the current visual language and the rules for
 extending it. Proposed changes are marked **proposed**; they are not shipped features.
 
+Meeting availability added on 27 Oct 2026 has a separate responsive visual system at
+`/meeting/availability`; see [Meeting UI](meeting-ui.md). Assistant screens retain the
+baseline described here. Their shared layout now lives in `app/(assistant)/layout.tsx`.
+
 Read the [UI/UX audit](assistant-uiux-audit.md) for known gaps and the
 [motion specification](assistant-motion.md) for animation and loading behavior.
 

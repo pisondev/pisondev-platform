@@ -1,8 +1,12 @@
 # Roadmap
 
-Status as of 24 Oct 2026.
+Status as of 30 Oct 2026.
 
 ## Done
+
+- Meeting availability at `assistant.pisondev.com/meeting/availability`, with public
+  invitations, persistent responses, recommendations, confirmation, and calendar export;
+  see [meeting.md](meeting.md).
 
 - Link shortener at `go.pisondev.com` with the `/links` page ([links.md](links.md)).
 - Private assistant workspace: Google sign-in for the two allowed accounts, Finance
@@ -25,11 +29,12 @@ Status as of 24 Oct 2026.
 
 ## Later
 
-- Shared loading skeletons and interaction feedback, then chart/sheet animation and
-  accessible custom dropdowns, following the [motion spec](../design/assistant-motion.md).
+- Shared loading skeletons and accessible custom dropdowns, following the
+  [motion spec](../design/assistant-motion.md).
 - Finance UI for what the API already supports: edit and delete transactions, mark a
   subscription paid (shift Next Billing), sync status page.
-- Meeting assistant at `/meeting` (rules in the automation folder's Meeting Assistant).
+- Optional separate `meeting.pisondev.com` host with an origin and sign-in plan. Broader
+  Meeting automation remains future work (rules in the automation folder's Meeting Assistant).
 - Public site `pisondev.com` as `apps/web`.
 - Sign-in shared across subdomains with `COOKIE_DOMAIN=.pisondev.com`.
 - Remove the Hostinger parking records for `pisondev.com` and `www` when the public site ships.

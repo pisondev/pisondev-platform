@@ -1,5 +1,11 @@
 # Design
 
+## Meeting
+
+[Meeting UI](meeting-ui.md) documents the independent responsive availability feature,
+its interaction states, and synthetic screenshots. Product analysis and implementation
+contracts are in [Meeting availability](../docs/meeting.md).
+
 ## Assistant documentation
 
 Reviewed on 20 Oct 2026 for `assistant.pisondev.com`. Start here before building or

@@ -5,8 +5,8 @@ workspace at `assistant.pisondev.com`, starting with the Finance Assistant.
 
 | Path | What | Stack |
 |---|---|---|
-| [`apps/assistant-web`](apps/assistant-web) | Private web app: home, `/finance`, `/links`, later `/meeting` | Next.js 16, React 19, Tailwind 4 |
-| [`services/api`](services/api) | API, auth, finance rules, Notion sync, link shortener | Go 1.25, Gin, PostgreSQL 17 |
+| [`apps/assistant-web`](apps/assistant-web) | Private workspace plus public Meeting availability invitations | Next.js 16, React 19, Tailwind 4 |
+| [`services/api`](services/api) | API, auth, finance, Notion sync, links, meeting availability | Go 1.25, Gin, PostgreSQL 17 |
 | [`docs`](docs) | Architecture, sync, finance rules, link shortener, setup | |
 | [`design`](design) | Assistant design system, UI/UX audit, motion plan and Figma notes | |
 | [`deploy`](deploy) | Release build, server compose, deploy receiver and backups | Bash, Docker Compose |
@@ -67,6 +67,18 @@ currency counters, chart drawing and bar growth, quota-fill transitions, sliding
 pills, hover/press feedback, and transaction-sheet entrance/exit with keyboard focus
 containment. All motion respects the system reduced-motion setting. See the shipped
 scope in [the motion guide](design/assistant-motion.md#shipped-motion-30-oct-2026).
+
+## Meeting availability
+
+Meeting is available at [assistant.pisondev.com/meeting/availability](https://assistant.pisondev.com/meeting/availability),
+with a public demo at `/meeting/availability/demo`. An allowed account creates a poll; guests follow its
+link and mark availability without signing in. The heatmap ranks complete meeting
+windows; the owner can confirm a time, export a calendar file, or reopen the poll.
+Responses persist in PostgreSQL with private browser edit keys.
+
+Meeting has its own responsive UI. See [analysis, API and rollout](docs/meeting.md)
+and [UI references](design/meeting-ui.md). A separate `meeting.pisondev.com` host is
+future work; the current release uses the existing assistant host and sign-in.
 
 ## Deployment
 

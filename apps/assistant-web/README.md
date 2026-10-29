@@ -25,6 +25,11 @@ pnpm lint && pnpm exec tsc --noEmit && pnpm build
 | `/finance/subscriptions` | Subscriptions chart and tables |
 | `/finance/quota` | Weekly quota, recent expenses, savings, add transaction |
 | `/links` | Short links on `go.pisondev.com`: create, copy, QR code, visits, edit, pause, delete |
+| `/meeting/availability` | Create and list availability polls; owner actions require sign-in |
+| `/meeting/availability/demo` | Interactive synthetic demo without login |
+| `/meeting/availability/<id>` | Public guest availability, group heatmap, recommendations, confirmed time |
 
-`src/proxy.ts` sends visitors without a session cookie to `/login`; the API still checks
-the session on every request.
+`src/proxy.ts` sends visitors without a session cookie to `/login`, except public
+availability pages. The API checks sessions on private operations and guest edit keys
+on response updates. Meeting has its own scoped responsive layout; Assistant routes
+share `src/app/(assistant)/layout.tsx`. See [Meeting](../../docs/meeting.md).

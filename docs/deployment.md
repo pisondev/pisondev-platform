@@ -33,6 +33,12 @@ a time.
 Migrations run when the API starts. They are forward-only: a rollback restores the
 previous binary, not the previous schema; the pre-deploy dump is the way back for data.
 
+Meeting availability runs on the same release and host at `/meeting/availability`.
+Guests can open the demo and invitation links without a session; creating polls and
+confirming times use the existing assistant sign-in. Migration `00003_meeting.sql`
+creates an independent schema during API startup. A separate Meeting hostname is not
+needed for this release; its origin and authentication would need explicit setup.
+
 ## On the server
 
 Everything lives in `~/projects/pisondev-platform/` of `user_pison`:
