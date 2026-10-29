@@ -1,6 +1,7 @@
 # api
 
-Go API for the platform: auth, finance rules, Notion sync. Gin, pgx, goose migrations
+Go API for the platform: auth, finance, Notion sync, links, and meeting availability.
+Gin, pgx, goose migrations
 (applied on startup).
 
 ```bash
@@ -13,4 +14,4 @@ TEST_DATABASE_URL=postgres://pisondev:pisondev@localhost:5448/pisondev_test?sslm
 
 Environment variables are documented in [`.env.example`](.env.example). Design notes:
 [architecture](../../docs/architecture.md), [Notion sync](../../docs/notion-sync.md),
-[finance rules](../../docs/finance-rules.md).
+[finance rules](../../docs/finance-rules.md), [meeting availability](../../docs/meeting.md).

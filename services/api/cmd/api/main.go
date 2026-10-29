@@ -29,6 +29,7 @@ import (
 	"github.com/pisondev/pisondev-platform/services/api/internal/config"
 	"github.com/pisondev/pisondev-platform/services/api/internal/finance"
 	"github.com/pisondev/pisondev-platform/services/api/internal/links"
+	"github.com/pisondev/pisondev-platform/services/api/internal/meeting"
 	"github.com/pisondev/pisondev-platform/services/api/internal/notionsync"
 	"github.com/pisondev/pisondev-platform/services/api/internal/platform/clock"
 	"github.com/pisondev/pisondev-platform/services/api/internal/platform/database"
@@ -195,6 +196,7 @@ func serve(ctx context.Context, cfg config.Config, a app, log *slog.Logger) erro
 	a.auth.Register(public, private)
 	finance.NewHandler(a.finance).Register(private)
 	links.NewHandler(a.links).Register(private)
+	meeting.NewHandler(meeting.NewStore(a.pool, clock.System)).Register(public, private)
 	private.GET("/sync", notionsync.StatusHandler(a.pool, a.syncer))
 	private.POST("/sync", notionsync.TriggerHandler(a.syncer))
 	r.NoRoute(func(c *gin.Context) { httpx.Fail(c, httpx.NotFound("No such route.")) })
