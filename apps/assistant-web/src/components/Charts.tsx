@@ -83,8 +83,8 @@ export function SubscriptionChart({ items, swatches, toggle }: {
           ))}
         </defs>
         <Axes x={AX} top={15} bottom={BOTTOM} right={RIGHT} />
-        <circle cx={38} cy={93} r={4} fill="#787878" />
-        <circle cx={38} cy={207} r={4} fill="#787878" />
+        <circle cx={AX} cy={93} r={4} fill="#787878" />
+        <circle cx={AX} cy={207} r={4} fill="#787878" />
         <ChartMarks signature={JSON.stringify(items)}>
           {bars.map((b, i) => (
             <path key={b.id} className="motion-bar" style={{ transformOrigin: `0px ${BOTTOM}px`, animationDelay: `${Math.min(i, 5) * 30}ms` }} d={barPath(b.x, b.y, barW, b.h, 25)} fill={`url(#bar-${b.id})`} />
@@ -234,7 +234,6 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
         <svg viewBox={`0 0 ${VW} ${VH + 50}`} className="block w-full" role="group" aria-label={`Cash flow chart: ${series.map((s) => s.name).join(" and ")}`}>
           <Axes x={AX} top={89} bottom={BOTTOM} right={RIGHT} />
           {lo < 0 ? <line x1={AX} y1={y(0)} x2={RIGHT} y2={y(0)} stroke="#c0c0c0" strokeWidth={1.5} /> : null}
-          <circle cx={AX - 2} cy={y(hi)} r={4} fill="#787878" />
           <ChartMarks signature={signature}>
             <g className="motion-chart-detail">
               {labels.map((l, i) => (
@@ -255,6 +254,15 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
                   />
                 ))
               : null}
+            {/* Each point projects onto both axes: its value on y (series color), its period on x. */}
+            <g className="motion-chart-detail">
+              {labels.map((l, i) => (
+                <circle key={`ax-${l}-${i}`} cx={x(i)} cy={BOTTOM + 1} r={4} fill="#787878" />
+              ))}
+              {series.map((s) =>
+                s.values.map((v, i) => <circle key={`ay-${s.name}-${i}`} cx={AX} cy={y(v)} r={4} fill={s.color} />),
+              )}
+            </g>
             <g className="motion-chart-detail">
               {series.map((s) =>
                 s.values.map((v, i) => (
@@ -265,9 +273,15 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
           </ChartMarks>
           {points.map((p) =>
             pinned.includes(p.key) ? (
-              <circle key={`pin-${p.key}`} cx={p.px} cy={p.py} r={10} fill={p.color} stroke="var(--color-card)" strokeWidth={3} />
+              <g key={`pin-${p.key}`}>
+                <line x1={AX} y1={p.py} x2={p.px} y2={p.py} stroke={p.color} strokeWidth={1.5} strokeDasharray="5 5" opacity={0.6} />
+                <circle cx={AX} cy={p.py} r={6} fill={p.color} />
+                <circle cx={p.px} cy={p.py} r={10} fill={p.color} stroke="var(--color-card)" strokeWidth={3} />
+              </g>
             ) : p.key === active ? (
               <g key={`act-${p.key}`}>
+                <line x1={AX} y1={p.py} x2={p.px} y2={p.py} stroke={p.color} strokeWidth={1.5} strokeDasharray="5 5" opacity={0.6} />
+                <circle cx={AX} cy={p.py} r={6} fill={p.color} />
                 <circle cx={p.px} cy={p.py} r={14} fill={p.color} opacity={0.15} />
                 <circle cx={p.px} cy={p.py} r={6} fill={p.color} />
               </g>
