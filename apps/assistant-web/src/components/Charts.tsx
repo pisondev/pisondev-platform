@@ -343,7 +343,7 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
         ) : null}
         <div className="absolute top-[3%] right-[3%] flex flex-col items-end gap-10">
           {toggle}
-          <ul className="grid justify-items-end gap-4 pr-8 text-small leading-tight">
+          <ul className="grid justify-items-start gap-4 pr-8 text-small leading-tight">
             {series.map((s) => (
               <li key={s.name} className="flex items-center gap-10" style={{ color: s.color }}>
                 <span aria-hidden className="inline-block h-[3px] w-40 rounded-full" style={{ background: s.color }} />
