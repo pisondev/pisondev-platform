@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { shortDate, signedRupiah } from "@/lib/format";
 import type { Cashflow, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
-import { CashflowChart } from "../Charts";
+import { CashflowChart, type CashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Card, Chevron, Figure, Note, PageHeader, Panel, Toggle } from "../ui";
 
@@ -19,14 +19,15 @@ export function FinanceDashboard() {
   const cashflow = useApi<Cashflow>(`/finance/cashflow?granularity=${granularity}`);
   const txs = useApi<Transaction[]>(`/finance/transactions?kind=${kind}&limit=100`);
 
-  const points = useMemo(
-    () =>
-      (cashflow.data?.points ?? []).map((p) => ({
-        label: p.label,
-        value: kind === "income" ? p.income : kind === "outcome" ? p.outcome : p.net,
-      })),
-    [cashflow.data, kind],
-  );
+  const { labels, series } = useMemo(() => {
+    const pts = cashflow.data?.points ?? [];
+    const income: CashflowSeries = { name: "Income", color: "var(--color-leaf)", values: pts.map((p) => p.income) };
+    const outcome: CashflowSeries = { name: "Outcome", color: "var(--color-maroon)", values: pts.map((p) => p.outcome) };
+    return {
+      labels: pts.map((p) => p.label),
+      series: kind === "income" ? [income] : kind === "outcome" ? [outcome] : [income, outcome],
+    };
+  }, [cashflow.data, kind]);
 
   return (
     <>
@@ -55,7 +56,8 @@ export function FinanceDashboard() {
 
         <Card>
           <CashflowChart
-            points={points}
+            labels={labels}
+            series={series}
             toggle={
               <Toggle<Kind>
                 options={[

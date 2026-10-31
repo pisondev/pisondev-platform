@@ -48,6 +48,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-10-31: Finance Cash Flow "All" now draws income (green) and outcome (red) as two
+  lines with a legend below the chart, instead of one net line. The Outcome view is red too.
+
 - 2026-10-27: Enabled the Meeting Hub tile. Existing Assistant pages share a route-group
   layout without URL changes; Meeting has a separate wide responsive visual system.
 

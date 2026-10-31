@@ -138,10 +138,10 @@ zoom and in crowded charts; small text is part of the baseline, not proof of acc
 | `muted` | `#787878` | Supporting text, axes, separators |
 | `line` | `#C0C0C0` | Input borders and row rules |
 | `green` | `#165D23` | Positive amounts and Finance navigation |
-| `leaf` | `#298352` | Cash flow line/points and chart gradient endpoint |
+| `leaf` | `#298352` | Cash flow income line/points and chart gradient endpoint |
 | `blue` | `#2A5FC2` | Subscriptions navigation, target, projection, links |
 | `gold` | `#866633` | Warning text and title gradient endpoint |
-| `maroon` | `#810F0F` | Expenses, errors, negative remaining |
+| `maroon` | `#810F0F` | Expenses (incl. cash flow outcome line), errors, negative remaining |
 | `wine` | `#5D1616` | Red heading endpoint and over-quota text |
 | `pink` | `#DB4B6F` | Subscription series label |
 | `forest` | `#03310A` | Title gradient start |
@@ -260,7 +260,7 @@ There is no chart or animation package dependency.
 |---|---|---|
 | Subscription | `866 × 529` | Rounded bars; one color per row/bar; price and name labels; toggle upper right |
 | Savings | `847 × 496` | Target/Now bars; gap annotation; value labels separate when close |
-| Cash flow | `847 × 546` | Line and dots; dashed drop lines; zero guide for negative data; labels sampled to about six |
+| Cash flow | `847 × 546` | Income (leaf) and outcome (maroon) lines with dots, legend below the axis; dashed drop lines to the higher value; zero guide for negative data; labels sampled to about six |
 
 Subscription bar height has a 40-unit minimum. Savings also clamps negative values to
 zero before applying a 40-unit minimum. These are visual compromises, not proportional

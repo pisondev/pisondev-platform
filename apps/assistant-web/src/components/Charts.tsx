@@ -174,52 +174,80 @@ export function SavingsChart({ target, now }: { target: number; now: number }) {
 }
 
 // -----------------------------------------------------------------------------
-// Cash flow: one value per period with drop lines (card 847 x 496).
+// Cash flow: one line per series (income, outcome) with drop lines (card 847 x 496).
 
-export function CashflowChart({ points, toggle }: { points: { label: string; value: number }[]; toggle: ReactNode }) {
+export type CashflowSeries = { name: string; color: string; values: number[] };
+
+export function CashflowChart({ labels, series, toggle }: { labels: string[]; series: CashflowSeries[]; toggle: ReactNode }) {
   const VW = 847, VH = 496, AX = 40, BOTTOM = 508, TOP = 175, RIGHT = 770;
-  const values = points.map((p) => p.value);
+  const n = labels.length;
+  const values = series.flatMap((s) => s.values);
   const lo = Math.min(0, ...values), hi = Math.max(0, ...values);
   const span = hi - lo || 1;
   const y = (v: number) => BOTTOM - 8 - ((v - lo) / span) * (BOTTOM - 8 - TOP);
-  const step = points.length > 1 ? (RIGHT - 60 - (AX + 76)) / (points.length - 1) : 0;
-  const x = (i: number) => (points.length > 1 ? AX + 76 + step * i : (AX + RIGHT) / 2);
-  const every = Math.max(1, Math.ceil(points.length / 6)); // keep labels from crowding
-  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(p.value)}`).join(" ");
+  const step = n > 1 ? (RIGHT - 60 - (AX + 76)) / (n - 1) : 0;
+  const x = (i: number) => (n > 1 ? AX + 76 + step * i : (AX + RIGHT) / 2);
+  const every = Math.max(1, Math.ceil(n / 6)); // keep labels from crowding
+  const peak = labels.map((_, i) => Math.max(...series.map((s) => s.values[i] ?? 0)));
 
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${VW} ${VH + 50}`} className="block w-full" role="img" aria-label="Cash flow chart">
-        <Axes x={AX} top={89} bottom={BOTTOM} right={RIGHT} />
-        {lo < 0 ? <line x1={AX} y1={y(0)} x2={RIGHT} y2={y(0)} stroke="#c0c0c0" strokeWidth={1.5} /> : null}
-        <circle cx={AX - 2} cy={y(hi)} r={4} fill="#787878" />
-        <ChartMarks signature={JSON.stringify(points)}>
-          <g className="motion-chart-detail">
-            {points.map((p, i) => (
-              <line key={`d-${p.label}`} x1={x(i)} y1={y(p.value)} x2={x(i)} y2={BOTTOM} stroke="#787878" strokeWidth={1} strokeDasharray="5 5" />
-            ))}
-          </g>
-          {points.length > 1 ? <path className="motion-line" pathLength={1} d={line} fill="none" stroke="#298352" strokeWidth={3} strokeLinejoin="round" /> : null}
-          <g className="motion-chart-detail">
-            {points.map((p, i) => (
-              <circle key={`p-${p.label}`} cx={x(i)} cy={y(p.value)} r={points.length > 1 ? 4 : 7} fill="#298352" />
-            ))}
-          </g>
-        </ChartMarks>
-      </svg>
-      {points.map((p, i) =>
-        i % every === 0 || i === points.length - 1 ? (
-          <Label key={`l${i}`} x={x(i) - 70} y={BOTTOM + 6} w={140} h={44} vw={VW} vh={VH + 50} className="text-ink">
-            {p.label}
+    <div>
+      <div className="relative">
+        <svg viewBox={`0 0 ${VW} ${VH + 50}`} className="block w-full" role="img" aria-label={`Cash flow chart: ${series.map((s) => s.name).join(" and ")}`}>
+          <Axes x={AX} top={89} bottom={BOTTOM} right={RIGHT} />
+          {lo < 0 ? <line x1={AX} y1={y(0)} x2={RIGHT} y2={y(0)} stroke="#c0c0c0" strokeWidth={1.5} /> : null}
+          <circle cx={AX - 2} cy={y(hi)} r={4} fill="#787878" />
+          <ChartMarks signature={JSON.stringify({ labels, series })}>
+            <g className="motion-chart-detail">
+              {labels.map((l, i) => (
+                <line key={`d-${l}`} x1={x(i)} y1={y(peak[i])} x2={x(i)} y2={BOTTOM} stroke="#787878" strokeWidth={1} strokeDasharray="5 5" />
+              ))}
+            </g>
+            {n > 1
+              ? series.map((s) => (
+                  <path
+                    key={`line-${s.name}`}
+                    className="motion-line"
+                    pathLength={1}
+                    d={s.values.map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`).join(" ")}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={3}
+                    strokeLinejoin="round"
+                  />
+                ))
+              : null}
+            <g className="motion-chart-detail">
+              {series.map((s) =>
+                s.values.map((v, i) => (
+                  <circle key={`p-${s.name}-${labels[i]}`} cx={x(i)} cy={y(v)} r={n > 1 ? 4 : 7} fill={s.color} />
+                )),
+              )}
+            </g>
+          </ChartMarks>
+        </svg>
+        {labels.map((l, i) =>
+          i % every === 0 || i === n - 1 ? (
+            <Label key={`l${i}`} x={x(i) - 70} y={BOTTOM + 6} w={140} h={44} vw={VW} vh={VH + 50} className="text-ink">
+              {l}
+            </Label>
+          ) : null,
+        )}
+        {n === 0 ? (
+          <Label x={AX} y={280} w={RIGHT - AX} h={60} vw={VW} vh={VH + 50} className="text-muted">
+            No transactions yet.
           </Label>
-        ) : null,
-      )}
-      {points.length === 0 ? (
-        <Label x={AX} y={280} w={RIGHT - AX} h={60} vw={VW} vh={VH + 50} className="text-muted">
-          No transactions yet.
-        </Label>
-      ) : null}
-      <div className="absolute top-[3%] right-[3%]">{toggle}</div>
+        ) : null}
+        <div className="absolute top-[3%] right-[3%]">{toggle}</div>
+      </div>
+      <div className="flex justify-center gap-40 pb-20 text-small">
+        {series.map((s) => (
+          <span key={s.name} className="flex items-center gap-10" style={{ color: s.color }}>
+            <span aria-hidden className="inline-block h-[3px] w-40 rounded-full" style={{ background: s.color }} />
+            {s.name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
