@@ -112,10 +112,16 @@ export function SubscriptionChart({ items, swatches, toggle }: {
 }
 
 // -----------------------------------------------------------------------------
-// Savings: Target vs Now with the gap marked (card 847 x 496).
+// Savings: Target vs Now with the gap marked (card 847 x 496). Value labels sit left of the
+// axis and the gap label right of the dashed marker; the two bars share the width between.
 
 export function SavingsChart({ target, now }: { target: number; now: number }) {
-  const VW = 847, VH = 496, AX = 162, BOTTOM = 435, TOP = 94;
+  const VW = 847, VH = 496, AX = 168, BOTTOM = 435, TOP = 94;
+  const GAP_X = 640; // dashed gap marker
+  const BAR_GAP = 48;
+  const tX = AX + 30;
+  const barW = (GAP_X - 24 - tX - BAR_GAP) / 2;
+  const nX = tX + barW + BAR_GAP;
   const maxV = Math.max(1, target, now);
   const hOf = (v: number) => ((BOTTOM - TOP) * Math.max(0, v)) / maxV;
   const tTop = BOTTOM - hOf(target);
@@ -140,17 +146,17 @@ export function SavingsChart({ target, now }: { target: number; now: number }) {
             <stop offset="1" stopColor="#5cd38a" />
           </linearGradient>
         </defs>
-        <line x1={AX} y1={tTop} x2={430} y2={tTop} stroke="#c0c0c0" strokeWidth={1.5} />
-        <line x1={AX} y1={nTop} x2={430} y2={nTop} stroke="#c0c0c0" strokeWidth={1.5} />
-        <Axes x={AX} top={16} bottom={BOTTOM} right={440} />
-        <circle cx={AX - 2} cy={tTop} r={4} fill="#787878" />
-        <circle cx={AX - 2} cy={nTop} r={4} fill="#787878" />
+        <line x1={AX} y1={tTop} x2={GAP_X} y2={tTop} stroke="#c0c0c0" strokeWidth={1.5} />
+        <line x1={AX} y1={nTop} x2={GAP_X} y2={nTop} stroke="#c0c0c0" strokeWidth={1.5} />
+        <Axes x={AX} top={16} bottom={BOTTOM} right={GAP_X + 10} />
+        <circle cx={AX} cy={tTop} r={4} fill="#787878" />
+        <circle cx={AX} cy={nTop} r={4} fill="#787878" />
         <ChartMarks signature={`${target}:${now}`}>
-          <path className="motion-bar" style={{ transformOrigin: `0px ${BOTTOM}px` }} d={barPath(192, tTop, 87, BOTTOM - tTop, 25)} fill="url(#sv-target)" />
-          <path className="motion-bar" style={{ transformOrigin: `0px ${BOTTOM}px`, animationDelay: "60ms" }} d={barPath(324, nTop, 87, BOTTOM - nTop, 25)} fill="url(#sv-now)" />
+          <path className="motion-bar" style={{ transformOrigin: `0px ${BOTTOM}px` }} d={barPath(tX, tTop, barW, BOTTOM - tTop, 25)} fill="url(#sv-target)" />
+          <path className="motion-bar" style={{ transformOrigin: `0px ${BOTTOM}px`, animationDelay: "60ms" }} d={barPath(nX, nTop, barW, BOTTOM - nTop, 25)} fill="url(#sv-now)" />
         </ChartMarks>
         {lo - hi > 2 ? (
-          <line x1={430} y1={hi} x2={430} y2={lo} stroke={gap > 0 ? "#810f0f" : "#165d23"} strokeWidth={1.5} strokeDasharray="6 5" />
+          <line x1={GAP_X} y1={hi} x2={GAP_X} y2={lo} stroke={gap > 0 ? "#810f0f" : "#165d23"} strokeWidth={1.5} strokeDasharray="6 5" />
         ) : null}
       </svg>
       <Label x={0} y={tLabel - 22} w={AX - 10} h={44} vw={VW} vh={VH} className="justify-end text-blue">
@@ -160,14 +166,14 @@ export function SavingsChart({ target, now }: { target: number; now: number }) {
         {rupiah(now)}
       </Label>
       {lo - hi > 2 ? (
-        <Label x={440} y={(hi + lo) / 2 - 22} w={240} h={44} vw={VW} vh={VH} className={`justify-start ${gap > 0 ? "text-maroon" : "text-green"}`}>
+        <Label x={GAP_X + 10} y={(hi + lo) / 2 - 22} w={VW - GAP_X - 14} h={44} vw={VW} vh={VH} className={`justify-start ${gap > 0 ? "text-maroon" : "text-green"}`}>
           {gap > 0 ? rupiah(gap) : `+${rupiah(-gap)}`}
         </Label>
       ) : null}
-      <Label x={172} y={BOTTOM + 10} w={128} h={44} vw={VW} vh={VH} className="text-blue">
+      <Label x={tX} y={BOTTOM + 10} w={barW} h={44} vw={VW} vh={VH} className="text-blue">
         Target
       </Label>
-      <Label x={304} y={BOTTOM + 10} w={128} h={44} vw={VW} vh={VH} className="text-green">
+      <Label x={nX} y={BOTTOM + 10} w={barW} h={44} vw={VW} vh={VH} className="text-green">
         Now
       </Label>
     </div>

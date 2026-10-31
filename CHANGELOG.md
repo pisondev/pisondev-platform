@@ -64,6 +64,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-10-31: The Savings chart on `/finance/quota` fills its card: the Target and Now
+  bars widen to share the space up to the gap marker instead of two thin bars on the left.
+
 - 2026-10-31: Finance Cash Flow "All" now draws income (green) and outcome (red) as two
   lines with a legend below the chart, instead of one net line. The Outcome view is red too.
 
