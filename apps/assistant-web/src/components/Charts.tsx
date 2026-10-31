@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { rupiah } from "@/lib/format";
 import { ChartMarks } from "./Motion";
 
@@ -189,15 +189,36 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
   const x = (i: number) => (n > 1 ? AX + 76 + step * i : (AX + RIGHT) / 2);
   const every = Math.max(1, Math.ceil(n / 6)); // keep labels from crowding
   const peak = labels.map((_, i) => Math.max(...series.map((s) => s.values[i] ?? 0)));
+  const signature = JSON.stringify({ labels, series });
+
+  // Hover or focus shows a point's amount; a click pins it until clicked again.
+  // Pins belong to one dataset, so a filter or period change clears them.
+  const [active, setActive] = useState<string | null>(null);
+  const [pins, setPins] = useState<{ signature: string; keys: string[] }>({ signature: "", keys: [] });
+  const pinned = pins.signature === signature ? pins.keys : [];
+  const points = series.flatMap((s) =>
+    s.values.map((v, i) => ({ key: `${s.name}:${i}`, name: s.name, color: s.color, label: labels[i], value: v, i, px: x(i), py: y(v), top: v >= peak[i] })),
+  );
+  const togglePin = (key: string) => {
+    const on = !pinned.includes(key);
+    setPins({ signature, keys: on ? [...pinned, key] : pinned.filter((k) => k !== key) });
+    if (!on) setActive(null); // hide it right away, even under the pointer
+  };
+  const onKey = (e: KeyboardEvent, key: string) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    togglePin(key);
+  };
+  const shown = points.filter((p) => p.key === active || pinned.includes(p.key));
 
   return (
     <div>
       <div className="relative">
-        <svg viewBox={`0 0 ${VW} ${VH + 50}`} className="block w-full" role="img" aria-label={`Cash flow chart: ${series.map((s) => s.name).join(" and ")}`}>
+        <svg viewBox={`0 0 ${VW} ${VH + 50}`} className="block w-full" role="group" aria-label={`Cash flow chart: ${series.map((s) => s.name).join(" and ")}`}>
           <Axes x={AX} top={89} bottom={BOTTOM} right={RIGHT} />
           {lo < 0 ? <line x1={AX} y1={y(0)} x2={RIGHT} y2={y(0)} stroke="#c0c0c0" strokeWidth={1.5} /> : null}
           <circle cx={AX - 2} cy={y(hi)} r={4} fill="#787878" />
-          <ChartMarks signature={JSON.stringify({ labels, series })}>
+          <ChartMarks signature={signature}>
             <g className="motion-chart-detail">
               {labels.map((l, i) => (
                 <line key={`d-${l}`} x1={x(i)} y1={y(peak[i])} x2={x(i)} y2={BOTTOM} stroke="#787878" strokeWidth={1} strokeDasharray="5 5" />
@@ -225,7 +246,57 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
               )}
             </g>
           </ChartMarks>
+          {points.map((p) =>
+            pinned.includes(p.key) ? (
+              <circle key={`pin-${p.key}`} cx={p.px} cy={p.py} r={10} fill={p.color} stroke="var(--color-card)" strokeWidth={3} />
+            ) : p.key === active ? (
+              <g key={`act-${p.key}`}>
+                <circle cx={p.px} cy={p.py} r={14} fill={p.color} opacity={0.15} />
+                <circle cx={p.px} cy={p.py} r={6} fill={p.color} />
+              </g>
+            ) : null,
+          )}
+          {points.map((p) => (
+            <circle
+              key={`hit-${p.key}`}
+              className="chart-hit"
+              cx={p.px}
+              cy={p.py}
+              r={28}
+              fill="transparent"
+              tabIndex={0}
+              role="button"
+              aria-pressed={pinned.includes(p.key)}
+              aria-label={`${p.name} ${p.label}: ${rupiah(p.value)}`}
+              onPointerEnter={(e) => { if (e.pointerType !== "touch") setActive(p.key); }}
+              onPointerLeave={() => setActive((k) => (k === p.key ? null : k))}
+              onFocus={() => setActive(p.key)}
+              onBlur={() => setActive((k) => (k === p.key ? null : k))}
+              onClick={() => togglePin(p.key)}
+              onKeyDown={(e) => onKey(e, p.key)}
+            />
+          ))}
         </svg>
+        {shown.map((p) => {
+          // The higher series labels above its point, the lower one below, so pairs never collide.
+          const above = p.top ? p.py - 58 >= 0 : p.py + 58 > BOTTOM;
+          return (
+            <Label
+              key={`tip-${p.key}`}
+              x={Math.max(0, Math.min(VW - 260, p.px - 130))}
+              y={above ? p.py - 58 : p.py + 14}
+              w={260}
+              h={44}
+              vw={VW}
+              vh={VH + 50}
+              className="chart-tip pointer-events-none"
+            >
+              <span className="rounded-full bg-card/95 px-14 py-2 font-bold shadow-[0_1px_4px_rgb(0_0_0/0.12)]" style={{ color: p.color }}>
+                {rupiah(p.value)}
+              </span>
+            </Label>
+          );
+        })}
         {labels.map((l, i) =>
           i % every === 0 || i === n - 1 ? (
             <Label key={`l${i}`} x={x(i) - 70} y={BOTTOM + 6} w={140} h={44} vw={VW} vh={VH + 50} className="text-ink">

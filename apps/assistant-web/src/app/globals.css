@@ -136,6 +136,9 @@ body {
   box-shadow: none;
 }
 
+/* Cash flow points: a hit area wider than the dot; the enlarged dot shows focus instead of an outline. */
+.chart-hit { cursor: pointer; outline: none; }
+
 /* Custom select (components/Select.tsx). The list sits in a body portal, so its tone lives here. */
 .select-row {
   display: flex;
@@ -263,6 +266,7 @@ body {
     animation: assistant-enter var(--motion-panel) var(--motion-ease-out) both;
   }
   .motion-panel ~ .motion-panel { animation-delay: 35ms; }
+  .chart-tip { animation: assistant-enter var(--motion-fast) var(--motion-ease-out) both; }
   .motion-row, .motion-feedback {
     animation: assistant-enter var(--motion-base) var(--motion-ease-out) both;
   }

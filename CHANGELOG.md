@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-10-31: Cash Flow points show their amount in the series color on hover or keyboard
+  focus. A click (or Enter/Space) pins the amount with a larger dot; a second click
+  removes it. Pins clear when the filter or period changes.
+
 - 2026-10-31: Custom `Select` dropdown in place of every native select (Finance Group by,
   transaction Category and Account, Meeting hours, duration and time zones). The list
   slides open and closed, flips above near the screen edge, stays above the sheet, and

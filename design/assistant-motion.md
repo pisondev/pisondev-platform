@@ -25,8 +25,10 @@ that plan; the remaining sections describe future work. Use the
   Saving holds dismissal, disables fields and blocks repeated requests. Success closes
   through the same exit timing. Timers clean up on route unmount; preference changes
   finish an active exit immediately.
-- Link details, new link rows and visit bars share the motion primitives. Skeletons,
-  row removal/layout interpolation and richer chart tooltips remain future work.
+- Link details, new link rows and visit bars share the motion primitives. Skeletons
+  and row removal/layout interpolation remain future work.
+- 31 Oct 2026: Cash Flow point amounts rise in over 120 ms on hover, focus or pin;
+  pinned dots grow without animation. Reduced motion shows them at once.
 - 31 Oct 2026: the custom `Select` (section 6) replaces all native selects. Its list
   slides out of the trigger in 200 ms (clip-path reveal, 6 px shift, fade from 0.4) and
   back in 150 ms on close, mirrored when it opens above. Input is blocked while it

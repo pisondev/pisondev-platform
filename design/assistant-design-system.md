@@ -273,7 +273,7 @@ There is no chart or animation package dependency.
 |---|---|---|
 | Subscription | `866 × 529` | Rounded bars; one color per row/bar; price and name labels; toggle upper right |
 | Savings | `847 × 496` | Target/Now bars; gap annotation; value labels separate when close |
-| Cash flow | `847 × 546` | Income (leaf) and outcome (maroon) lines with dots, legend below the axis; dashed drop lines to the higher value; zero guide for negative data; labels sampled to about six |
+| Cash flow | `847 × 546` | Income (leaf) and outcome (maroon) lines with dots, legend below the axis; dashed drop lines to the higher value; hover/focus shows the amount, click pins it with a larger dot (higher series labels above, lower below); zero guide for negative data; labels sampled to about six |
 
 Subscription bar height has a 40-unit minimum. Savings also clamps negative values to
 zero before applying a 40-unit minimum. These are visual compromises, not proportional

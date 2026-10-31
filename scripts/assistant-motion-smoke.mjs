@@ -111,6 +111,19 @@ try {
   await page.getByRole("listbox", { name: "Group by" }).waitFor({ state: "detached" });
   assert.equal(await groupBy.innerText(), "Weekly");
   assert.equal(await groupBy.evaluate((n) => n === document.activeElement), true);
+  // Hover shows a point's amount, a click pins it, a second click removes it.
+  const point = page.getByRole("button", { name: "Income Sep: Rp500.000", exact: true });
+  const tips = page.locator(".chart-tip");
+  await point.hover();
+  await tips.first().waitFor();
+  assert.equal(await tips.first().innerText(), "Rp500.000");
+  await point.click();
+  await page.mouse.move(0, 0);
+  assert.equal(await point.getAttribute("aria-pressed"), "true");
+  assert.equal(await tips.count(), 1);
+  await point.click();
+  assert.equal(await point.getAttribute("aria-pressed"), "false");
+  assert.equal(await tips.count(), 0);
   await screenshot(page, "finance-390.png");
 
   await page.goto("/finance/subscriptions");
