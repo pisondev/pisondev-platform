@@ -109,6 +109,29 @@ export function Chevron({ className = "" }: { className?: string }) {
 }
 
 /**
+ * Module navigation tile: a soft tinted gradient with a faint ring in the corner, an icon
+ * badge, the title, an optional live summary, and the chevron. The height grows with its
+ * content (minimum 292 units), so long titles never push the chevron out.
+ */
+export function NavTile({ href, title, icon, tone, children }: { href: string; title: string; icon: ReactNode; tone: "blue" | "green"; children?: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className={`nav-tile relative isolate flex min-h-292 flex-col overflow-hidden rounded-card p-28 ${tone === "blue" ? "nav-tile-blue text-blue" : "nav-tile-green text-green"}`}
+    >
+      <span aria-hidden className="nav-tile-icon flex size-[max(30px,calc(var(--spacing)*84))] items-center justify-center rounded-full">
+        <svg viewBox="0 0 24 24" className="size-[55%]" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          {icon}
+        </svg>
+      </span>
+      <span className="mt-18 text-heading leading-tight">{title}</span>
+      {children ? <span className="mt-12 grid gap-8 text-small">{children}</span> : null}
+      <Chevron className="mt-auto self-end pt-12 text-[max(28px,calc(var(--spacing)*80))]" />
+    </Link>
+  );
+}
+
+/**
  * Opens a detail page: the usual window-with-arrow icon. A 32 px target around a small
  * glyph, so it fits in a table header without changing its height.
  */

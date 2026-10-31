@@ -136,6 +136,52 @@ body {
   box-shadow: none;
 }
 
+/* Navigation tiles (NavTile): tinted gradient from the sky/mint tokens, a hairline edge, and
+   a soft glow with a thin ring tucked into the bottom-right corner behind the content. */
+.nav-tile {
+  background: linear-gradient(155deg, var(--tile-from), var(--tile-to));
+  box-shadow: inset 0 0 0 1px var(--tile-edge), 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 24px -18px var(--tile-shadow);
+}
+.nav-tile::before,
+.nav-tile::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+.nav-tile::before {
+  right: -32%;
+  bottom: -42%;
+  width: 95%;
+  background: radial-gradient(circle, var(--tile-glow), transparent 68%);
+}
+.nav-tile::after {
+  right: -20%;
+  bottom: -30%;
+  width: 66%;
+  border: 1px solid var(--tile-edge);
+}
+.nav-tile-blue {
+  --tile-from: color-mix(in srgb, var(--color-sky) 45%, white);
+  --tile-to: var(--color-sky);
+  --tile-edge: rgb(42 95 194 / 0.14);
+  --tile-glow: rgb(92 175 211 / 0.3);
+  --tile-shadow: rgb(42 95 194 / 0.32);
+}
+.nav-tile-green {
+  --tile-from: color-mix(in srgb, var(--color-mint) 45%, white);
+  --tile-to: var(--color-mint);
+  --tile-edge: rgb(22 93 35 / 0.14);
+  --tile-glow: rgb(92 211 138 / 0.3);
+  --tile-shadow: rgb(22 93 35 / 0.32);
+}
+.nav-tile-icon {
+  background: rgb(255 255 255 / 0.72);
+  box-shadow: inset 0 0 0 1px var(--tile-edge);
+}
+
 /* Cash flow points: a hit area wider than the dot; the enlarged dot shows focus instead of an outline. */
 .chart-hit { cursor: pointer; outline: none; }
 
@@ -322,6 +368,9 @@ body {
   main:has(.assistant-header) a.rounded-card:not([aria-disabled="true"]):hover { transform: translateY(-2px); }
   main:has(.assistant-header) a.rounded-card .font-chevron { transition: transform var(--motion-fast) var(--motion-ease-out); }
   main:has(.assistant-header) a.rounded-card:hover .font-chevron { transform: translateX(2px); }
+  main:has(.assistant-header) a.nav-tile:hover {
+    box-shadow: inset 0 0 0 1px var(--tile-edge), 0 1px 2px rgb(0 0 0 / 0.04), 0 16px 30px -18px var(--tile-shadow);
+  }
   main:has(.assistant-header) .detail-link-arrow { transition: transform var(--motion-fast) var(--motion-ease-out); }
   main:has(.assistant-header) .detail-link:hover .detail-link-arrow { transform: translate(1.5px, -1.5px); }
   :where(main:has(.assistant-header), .transaction-overlay) button:not(:disabled):not([aria-pressed]):hover {

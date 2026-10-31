@@ -249,6 +249,20 @@ try {
     await page.goto("/finance/quota");
     await ready(page);
     await noOverflow(page);
+    // Finance tiles grow with their content: nothing may spill out at any width.
+    await page.goto("/finance");
+    await ready(page);
+    await noOverflow(page);
+    const spills = await page.locator("a.nav-tile").evaluateAll((tiles) =>
+      tiles.flatMap((tile) => {
+        const box = tile.getBoundingClientRect();
+        return [...tile.querySelectorAll("span")]
+          .filter((n) => { const r = n.getBoundingClientRect(); return r.right > box.right + 0.5 || r.bottom > box.bottom + 0.5 || n.scrollWidth > n.clientWidth + 1; })
+          .map((n) => `${tile.getAttribute("href")}: ${n.textContent}`);
+      }),
+    );
+    assert.deepEqual(spills, [], `Tile content spills at ${width}px`);
+    if (width !== 1440) await screenshot(page, `finance-tiles-${width}.png`);
   }
   Object.assign(quota, { spent: 625000, remaining: -125000, percent: 125, level: "red" });
   await page.goto("/finance/quota");

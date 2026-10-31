@@ -1,7 +1,8 @@
 import { rupiah } from "@/lib/format";
 import type { CSSProperties } from "react";
 
-const FILL = {
+/** Fill gradient per quota level; the Finance quota tile reuses it. */
+export const QUOTA_FILL = {
   green: "linear-gradient(90deg, #59ceba, #5cd38a)",
   yellow: "linear-gradient(90deg, #cea159, #d3c95c)",
   red: "linear-gradient(90deg, #ce5959, #d37c5c)",
@@ -27,7 +28,7 @@ export function ProgressBar({
 }) {
   const width = Math.max(0, Math.min(100, percent));
   const over = percent > 100;
-  const fill = level === "empty" ? undefined : FILL[level];
+  const fill = level === "empty" ? undefined : QUOTA_FILL[level];
 
   const label = (overlay: boolean) =>
     over ? (

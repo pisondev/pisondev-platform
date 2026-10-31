@@ -1,14 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { shortDate, signedRupiah } from "@/lib/format";
-import type { Cashflow, CashflowKind as Kind, Granularity, Summary, Transaction } from "@/lib/types";
+import { rupiah, shortDate, signedRupiah } from "@/lib/format";
+import type { Cashflow, CashflowKind as Kind, Granularity, Quota, Subscriptions, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { CashflowChart, cashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Select } from "../Select";
-import { Card, Chevron, DetailLink, Figure, Note, PageHeader, Panel, Toggle } from "../ui";
+import { QUOTA_FILL } from "../ProgressBar";
+import { Card, DetailLink, Figure, NavTile, Note, PageHeader, Panel, Toggle } from "../ui";
 
 export function FinanceDashboard() {
   const [kind, setKind] = useState<Kind>("all");
@@ -16,6 +16,8 @@ export function FinanceDashboard() {
   const summary = useApi<Summary>("/finance/summary");
   const cashflow = useApi<Cashflow>(`/finance/cashflow?granularity=${granularity}`);
   const txs = useApi<Transaction[]>(`/finance/transactions?kind=${kind}&limit=100`);
+  const subs = useApi<Subscriptions>("/finance/subscriptions");
+  const quota = useApi<Quota>("/finance/quota");
 
   const { labels, series } = useMemo(() => cashflowSeries(cashflow.data?.points ?? [], kind), [cashflow.data, kind]);
 
@@ -83,15 +85,40 @@ export function FinanceDashboard() {
         </Card>
       </Panel>
 
-      <nav className="mt-58 grid grid-cols-2 gap-60 px-106">
-        <Link href="/finance/subscriptions" className="flex h-292 flex-col justify-between rounded-card bg-sky p-28 text-blue">
-          <span className="text-heading">Subscriptions</span>
-          <Chevron className="self-end text-[max(36px,calc(var(--spacing)*100))]" />
-        </Link>
-        <Link href="/finance/quota" className="flex h-292 flex-col justify-between rounded-card bg-mint p-28 text-green">
-          <span className="text-heading">Weekly Spending Quota</span>
-          <Chevron className="self-end text-[max(36px,calc(var(--spacing)*100))]" />
-        </Link>
+      {/* Two tiles side by side; below 360 px they stack so titles keep their size. */}
+      <nav className="mt-58 grid grid-cols-2 gap-40 px-85 max-[359px]:grid-cols-1">
+        <NavTile href="/finance/subscriptions" title="Subscriptions" tone="blue" icon={<path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3" />}>
+          {subs.data ? (
+            <>
+              <span>
+                <b>{rupiah(subs.data.monthly.total)}</b> / month
+              </span>
+              <span className="text-muted">
+                {subs.data.monthly.items.length} monthly · {subs.data.yearly.items.length} yearly
+              </span>
+            </>
+          ) : subs.loading ? (
+            <span className="text-muted">...</span>
+          ) : null}
+        </NavTile>
+        <NavTile href="/finance/quota" title="Weekly Spending Quota" tone="green" icon={<path d="m12 14 4-4M3.34 19a10 10 0 1 1 17.32 0" />}>
+          {quota.data ? (
+            <>
+              <span className={quota.data.remaining < 0 ? "text-maroon" : undefined}>
+                <b>{rupiah(quota.data.remaining)}</b> left
+              </span>
+              <span aria-hidden className="block h-[max(5px,calc(var(--spacing)*12))] overflow-hidden rounded-full bg-white/75">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${Math.max(0, Math.min(100, quota.data.percent))}%`, background: quota.data.level === "empty" ? undefined : QUOTA_FILL[quota.data.level] }}
+                />
+              </span>
+              <span className="text-muted">{Math.round(quota.data.percent)}% used</span>
+            </>
+          ) : quota.loading ? (
+            <span className="text-muted">...</span>
+          ) : null}
+        </NavTile>
       </nav>
     </>
   );

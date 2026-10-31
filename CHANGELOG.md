@@ -64,6 +64,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-10-31: Finance navigation tiles (Subscriptions, Weekly Spending Quota) use a new
+  `NavTile`: tinted gradient, corner ring, icon badge, and a live summary (monthly
+  subscription total and counts; quota left with a mini bar). Tiles grow with their
+  content and stack below 360 px, so text and chevron always stay inside.
+
 - 2026-10-31: The Savings chart on `/finance/quota` fills its card: the Target and Now
   bars widen to share the space up to the gap marker instead of two thin bars on the left.
 
