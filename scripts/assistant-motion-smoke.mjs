@@ -103,7 +103,14 @@ try {
   assert.equal(await page.getByRole("button", { name: "Outcome", exact: true }).getAttribute("aria-pressed"), "true");
   await page.getByRole("button", { name: "All", exact: true }).click();
   await ready(page);
-  assert.equal(await page.locator(".motion-line").evaluate((n) => getComputedStyle(n).strokeDashoffset), "0px");
+  // All draws income and outcome as two lines.
+  assert.deepEqual(await page.locator(".motion-line").evaluateAll((lines) => lines.map((n) => getComputedStyle(n).strokeDashoffset)), ["0px", "0px"]);
+  const groupBy = page.getByRole("combobox", { name: "Group by", exact: true });
+  await groupBy.click();
+  await page.getByRole("option", { name: "Weekly", exact: true }).click();
+  await page.getByRole("listbox", { name: "Group by" }).waitFor({ state: "detached" });
+  assert.equal(await groupBy.innerText(), "Weekly");
+  assert.equal(await groupBy.evaluate((n) => n === document.activeElement), true);
   await screenshot(page, "finance-390.png");
 
   await page.goto("/finance/subscriptions");
@@ -133,6 +140,25 @@ try {
   await dialog.waitFor();
   assert.equal(await page.locator("main").evaluate((n) => n.inert), true);
   assert.equal(await page.getByLabel("Name", { exact: true }).evaluate((n) => n === document.activeElement), true);
+  // A dropdown in the sheet: Escape closes only the list, picks never close the sheet.
+  const category = dialog.getByRole("combobox", { name: "Category", exact: true });
+  const categories = page.getByRole("listbox", { name: "Category" });
+  await category.click();
+  await categories.waitFor();
+  await page.keyboard.press("Escape");
+  await categories.waitFor({ state: "detached" });
+  assert.ok(await dialog.isVisible());
+  assert.equal(await category.evaluate((n) => n === document.activeElement), true);
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("End");
+  await page.keyboard.press("Enter");
+  await categories.waitFor({ state: "detached" });
+  assert.equal(await category.innerText(), "Other");
+  await category.click();
+  await page.getByRole("option", { name: "Makan", exact: true }).click();
+  await categories.waitFor({ state: "detached" });
+  assert.ok(await dialog.isVisible());
+  assert.equal(await category.innerText(), "Makan");
   // The active filter comes before Name in the form. Shift-Tab from the first control wraps.
   await dialog.getByRole("button", { name: "Expense", exact: true }).focus();
   await page.keyboard.press("Shift+Tab");

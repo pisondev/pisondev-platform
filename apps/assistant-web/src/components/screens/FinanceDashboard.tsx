@@ -7,6 +7,7 @@ import type { Cashflow, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { CashflowChart, type CashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
+import { Select } from "../Select";
 import { Card, Chevron, Figure, Note, PageHeader, Panel, Toggle } from "../ui";
 
 type Kind = "all" | "income" | "outcome";
@@ -40,18 +41,16 @@ export function FinanceDashboard() {
       <Panel className="mt-24">
         <div className="flex items-center justify-between px-6 pb-16">
           <h2 className="text-heading-green text-heading">Cash Flow</h2>
-          <label className="relative">
-            <span className="sr-only">Group by</span>
-            <select
-              value={granularity}
-              onChange={(e) => setGranularity(e.target.value as Granularity)}
-              className="appearance-none rounded-card bg-card py-10 pr-64 pl-28 text-small text-ink outline-none"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="weekly">Weekly</option>
-            </select>
-            <Chevron className="pointer-events-none absolute top-1/2 right-24 -translate-y-1/2 rotate-90 text-small text-muted" />
-          </label>
+          <Select<Granularity>
+            aria-label="Group by"
+            value={granularity}
+            onChange={setGranularity}
+            options={[
+              { value: "monthly", label: "Monthly" },
+              { value: "weekly", label: "Weekly" },
+            ]}
+            className="min-h-[36px] min-w-260 rounded-card bg-card py-10 pr-28 pl-28 text-small text-ink"
+          />
         </div>
 
         <Card>

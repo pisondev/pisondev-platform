@@ -47,6 +47,12 @@ async function json(response, status = 200) {
 async function visible(locator) {
   await locator.waitFor({ state: "visible" });
 }
+/** Picks an option from the custom Select combobox and waits for its list to close. */
+async function chooseOption(page, label, option) {
+  await page.getByRole("combobox", { name: label, exact: true }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+  await page.getByRole("listbox", { name: label }).waitFor({ state: "detached" });
+}
 async function settled(page) {
   await page.waitForLoadState("networkidle");
 }
@@ -155,7 +161,7 @@ try {
     demo.getByRole("status").filter({ hasText: "Jawaban demo ditambahkan" }),
   );
   assert.equal(await demo.locator(".m-participant").count(), 6);
-  await demo.getByLabel("Display time zone").selectOption("America/New_York");
+  await chooseOption(demo, "Display time zone", "New York");
   assert.match(await demo.locator(".m-grid-footer").innerText(), /New York/);
   const recs = demo.locator(".m-recommendation-main");
   assert.ok((await recs.count()) > 0);
@@ -202,7 +208,7 @@ try {
     }),
   );
   await dst.goto("/meeting/availability/qa-dst");
-  await dst.getByLabel("Display time zone").selectOption("America/New_York");
+  await chooseOption(dst, "Display time zone", "New York");
   const renderedSlots = await dst.locator("button[data-slot]").evaluateAll((cells) =>
     cells.map((cell) => cell.dataset.slot),
   );
@@ -248,9 +254,11 @@ try {
   await quarterPage.goto(invitation);
   await settled(quarterPage);
   assert.equal(
-    await quarterPage.getByLabel("Display time zone").inputValue(),
-    await quarterPage.evaluate(
-      () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    await quarterPage
+      .getByRole("combobox", { name: "Display time zone", exact: true })
+      .innerText(),
+    await quarterPage.evaluate(() =>
+      Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll("_", " "),
     ),
     "Preserve browser-detected zones outside the shortcut list",
   );

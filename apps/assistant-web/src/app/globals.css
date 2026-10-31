@@ -136,6 +136,99 @@ body {
   box-shadow: none;
 }
 
+/* Custom select (components/Select.tsx). The list sits in a body portal, so its tone lives here. */
+.select-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+  width: 100%;
+  min-width: 0;
+}
+.select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.select-chevron,
+.select-check {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.select-chevron { opacity: 0.6; }
+.select-trigger[aria-expanded="true"] .select-chevron { transform: rotate(180deg); }
+.select-popup {
+  --select-surface: var(--color-card);
+  --select-border: var(--color-line);
+  --select-active: var(--color-panel);
+  --select-ink: var(--color-ink);
+  --select-chosen: var(--color-green);
+  --select-radius: max(8px, var(--radius-card));
+  --select-from: inset(0 0 100% 0);
+  --select-shift: -6px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  overflow: hidden;
+  border: 1px solid var(--select-border);
+  border-radius: var(--select-radius);
+  background: var(--select-surface);
+  color: var(--select-ink);
+  line-height: 1.3;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.06);
+  clip-path: inset(-40px); /* resting value the slide animates to; keeps the shadow */
+}
+.select-popup[data-side="top"] {
+  --select-from: inset(100% 0 0 0);
+  --select-shift: 6px;
+}
+.select-popup[data-tone="meeting"] {
+  --select-surface: #fff;
+  --select-border: #dce2d8;
+  --select-active: #f1f5ea;
+  --select-ink: #26372b;
+  --select-chosen: #234b36;
+  --select-radius: 7px;
+}
+.select-popup[data-state="closing"] { pointer-events: none; }
+.select-list {
+  position: relative;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.select-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  min-height: 40px;
+  padding: 0.4em 0.75em;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.select-list > li[data-active="true"] { background: var(--select-active); }
+.select-list > li[data-selected="true"] { color: var(--select-chosen); font-weight: 600; }
+
+@keyframes select-open {
+  from { clip-path: var(--select-from); transform: translateY(var(--select-shift)); opacity: 0.4; }
+}
+@keyframes select-close {
+  to { clip-path: var(--select-from); transform: translateY(var(--select-shift)); opacity: 0; }
+}
+
 @keyframes assistant-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -154,10 +247,18 @@ body {
     transition: color var(--motion-fast), background-color var(--motion-fast), border-color var(--motion-fast),
       box-shadow var(--motion-fast), opacity var(--motion-fast), transform var(--motion-fast) var(--motion-ease-out);
   }
-  :where(main:has(.assistant-header), .transaction-overlay) :is(button, a.rounded-card):not(:disabled, [aria-disabled="true"]):active {
+  :where(main:has(.assistant-header), .transaction-overlay) :is(button, a.rounded-card):not(:disabled, [aria-disabled="true"], .select-trigger):active {
     transform: scale(0.975);
     transition-duration: 80ms;
   }
+  /* The list slides out of its trigger once placed, and back in on close. */
+  .select-popup[data-placed][data-state="open"] {
+    animation: select-open 200ms var(--motion-ease-out);
+  }
+  .select-popup[data-state="closing"] {
+    animation: select-close 150ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  .select-chevron { transition: transform var(--motion-base) var(--motion-ease-standard); }
   .assistant-header ~ :is(div, nav):not(.fixed), .motion-panel {
     animation: assistant-enter var(--motion-panel) var(--motion-ease-out) both;
   }

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
 import { nowWIB } from "@/lib/format";
 import type { Options, Transaction } from "@/lib/types";
+import { Select } from "./Select";
 import { Toggle } from "./ui";
 
 // Must match FINANCE_EXCLUDE_MARKER on the API and the sheet formula.
@@ -195,20 +196,12 @@ export function AddTransactionSheet({
           </Field>
           {kind === "Keluar" ? (
             <Field label="Category" animated>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className={input}>
-                {categories.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
+              <Select aria-label="Category" value={category} onChange={setCategory} options={categories.map((c) => ({ value: c, label: c }))} className={input} />
               {fieldError("category")}
             </Field>
           ) : null}
           <Field label="Account">
-            <select value={account} onChange={(e) => setAccount(e.target.value)} className={input}>
-              {accounts.map((a) => (
-                <option key={a}>{a}</option>
-              ))}
-            </select>
+            <Select aria-label="Account" value={account} onChange={setAccount} options={accounts.map((a) => ({ value: a, label: a }))} className={input} />
             {fieldError("account")}
           </Field>
           <Field label="Date (WIB)">

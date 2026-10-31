@@ -217,6 +217,19 @@ arrow-key handling, or associated `tabpanel`. Before reusing it for new interact
 choose proper filter semantics or complete the tab contract described in the audit.
 The visual treatment can remain the same.
 
+### `Select<T>`
+
+`Select({ value, options, onChange, aria-label, className, tone, disabled })` in
+`Select.tsx` (added 31 Oct 2026) replaces every native select. It is a select-only
+combobox: focus stays on the trigger, which takes its look from `className` and adds a
+chevron that turns on open. The list renders in a body portal at z-60 (above sheets),
+6 px from the trigger, at least as wide, at most `min(240px, 40vh)` tall, and flips
+above when there is more room there. Rows are 40 px; the active row has a panel tint and
+the chosen value is green with a check. `tone="meeting"` swaps in the Meeting palette.
+The list copies the trigger's font. Keyboard: arrows, Home/End, PageUp/PageDown,
+typeahead, Enter/Space to choose, Escape to cancel (without closing an enclosing sheet),
+Tab to leave. Pass `aria-label` even inside a `<label>`.
+
 ### Navigation tiles and buttons
 
 Hub uses a two-column grid with `px-85 gap-60 mt-60`, tile `p-32`, and `h-292`.
@@ -301,7 +314,7 @@ capped at 480 px wide and 92 dynamic viewport height, and scrolls internally. In
 
 Fields use small muted labels, body-size inputs, card backgrounds, line borders,
 `px-24 py-16`, green focus borders, and a green 20% focus ring. Textareas do not resize.
-Selects and the date-time picker are native controls. Date is labeled WIB and initialized
+Category and Account use the shared `Select`; the date-time picker is native. Date is labeled WIB and initialized
 with `nowWIB()`. Amount accepts digits, dot grouping, `Rp`, and `rb`/`k` shorthand.
 Client native validation and API field errors both exist.
 

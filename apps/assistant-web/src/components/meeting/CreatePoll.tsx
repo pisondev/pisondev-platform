@@ -15,7 +15,17 @@ import {
   type PollConfig,
   type PollSummary,
 } from "@/lib/meeting";
+import { Select } from "../Select";
 import { Icon } from "./Icon";
+
+const HOURS = Array.from({ length: 25 }, (_, h) => ({
+  value: h,
+  label: `${String(h).padStart(2, "0")}:00`,
+}));
+const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240].map((n) => ({
+  value: n,
+  label: `${n} minutes`,
+}));
 
 function defaults(): PollConfig {
   const today = dateKey(new Date());
@@ -343,61 +353,53 @@ export function CreatePoll() {
               <div className="m-time-fields">
                 <label>
                   From
-                  <select
+                  <Select
+                    tone="meeting"
+                    aria-label="From"
                     className="m-input"
                     value={form.startHour}
-                    onChange={(e) => field("startHour", Number(e.target.value))}
+                    onChange={(v) => field("startHour", v)}
                     disabled={busy}
-                  >
-                    {Array.from({ length: 24 }, (_, h) => (
-                      <option key={h} value={h}>
-                        {String(h).padStart(2, "0")}:00
-                      </option>
-                    ))}
-                  </select>
+                    options={HOURS.slice(0, 24)}
+                  />
                 </label>
                 <span className="m-time-separator">—</span>
                 <label>
                   To
-                  <select
+                  <Select
+                    tone="meeting"
+                    aria-label="To"
                     className="m-input"
                     value={form.endHour}
-                    onChange={(e) => field("endHour", Number(e.target.value))}
+                    onChange={(v) => field("endHour", v)}
                     disabled={busy}
-                  >
-                    {Array.from({ length: 24 }, (_, h) => (
-                      <option key={h + 1} value={h + 1}>
-                        {String(h + 1).padStart(2, "0")}:00
-                      </option>
-                    ))}
-                  </select>
+                    options={HOURS.slice(1)}
+                  />
                 </label>
                 <label className="m-duration-field">
                   Meeting duration
-                  <select
+                  <Select
+                    tone="meeting"
+                    aria-label="Meeting duration"
                     className="m-input"
                     value={form.duration}
-                    onChange={(e) => field("duration", Number(e.target.value))}
+                    onChange={(v) => field("duration", v)}
                     disabled={busy}
-                  >
-                    {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (
-                      <option key={n} value={n}>
-                        {n} minutes
-                      </option>
-                    ))}
-                  </select>
+                    options={DURATIONS}
+                  />
                 </label>
               </div>
               <label className="m-zone-field">
                 <Icon name="globe" size={16} />
                 <span>Time zone</span>
-                <select
+                <Select
+                  tone="meeting"
                   aria-label="Poll time zone"
                   value={form.timezone}
                   disabled={busy}
-                  onChange={(e) => {
-                    const zone = e.target.value,
-                      now = dateKey(new Date(), zone);
+                  options={ZONES.map(([value, label]) => ({ value, label }))}
+                  onChange={(zone) => {
+                    const now = dateKey(new Date(), zone);
                     setForm((f) => ({
                       ...f,
                       timezone: zone,
@@ -406,13 +408,7 @@ export function CreatePoll() {
                       ),
                     }));
                   }}
-                >
-                  {ZONES.map(([value, text]) => (
-                    <option key={value} value={value}>
-                      {text}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
             </div>
             {error && (

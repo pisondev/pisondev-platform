@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-10-31: Custom `Select` dropdown in place of every native select (Finance Group by,
+  transaction Category and Account, Meeting hours, duration and time zones). The list
+  slides open and closed, flips above near the screen edge, stays above the sheet, and
+  supports the full keyboard combobox pattern. Reduced motion skips the slide.
+
 - 2026-10-30: Released Meeting availability on the assistant host with public demo and
   invitations, owner sign-in, response persistence, and calendar export.
 

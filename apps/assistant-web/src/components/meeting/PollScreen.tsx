@@ -35,6 +35,19 @@ import {
 import { AvailabilityGrid } from "./AvailabilityGrid";
 import { ConfirmTime } from "./ConfirmTime";
 import { Icon } from "./Icon";
+import { Select } from "../Select";
+
+/** Known zones, led by the poll's own zone and the viewer's zone when they are not listed. */
+function zoneOptions(pollZone: string, current: string) {
+  const known = (zone: string) => ZONES.some(([z]) => z === zone);
+  return [
+    ...(known(pollZone) ? [] : [{ value: pollZone, label: pollZone }]),
+    ...(current === pollZone || known(current)
+      ? []
+      : [{ value: current, label: current.replaceAll("_", " ") }]),
+    ...ZONES.map(([value, label]) => ({ value, label })),
+  ];
+}
 
 function subscribeOnline(update: () => void) {
   window.addEventListener("online", update);
@@ -592,29 +605,16 @@ export function PollScreen({ id }: { id: string }) {
             </div>
             <label className="m-display-zone">
               <Icon name="globe" size={15} />
-              <select
+              <Select
+                tone="meeting"
                 aria-label="Display time zone"
                 value={timezone}
-                onChange={(e) => {
-                  setTimezone(e.target.value);
+                options={zoneOptions(poll.timezone, timezone)}
+                onChange={(zone) => {
+                  setTimezone(zone);
                   setHovered("");
                 }}
-              >
-                {!ZONES.some(([zone]) => zone === poll.timezone) && (
-                  <option value={poll.timezone}>{poll.timezone}</option>
-                )}
-                {timezone !== poll.timezone &&
-                  !ZONES.some(([zone]) => zone === timezone) && (
-                    <option value={timezone}>
-                      {timezone.replaceAll("_", " ")}
-                    </option>
-                  )}
-                {ZONES.map(([value, label]) => (
-                  <option value={value} key={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
           </div>
           {mode === "mine" && (

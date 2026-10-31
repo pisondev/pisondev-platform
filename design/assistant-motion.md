@@ -25,9 +25,12 @@ that plan; the remaining sections describe future work. Use the
   Saving holds dismissal, disables fields and blocks repeated requests. Success closes
   through the same exit timing. Timers clean up on route unmount; preference changes
   finish an active exit immediately.
-- Link details, new link rows and visit bars share the motion primitives. Native select
-  menus remain native. Skeletons, custom dropdowns, row removal/layout interpolation
-  and richer chart tooltips remain future work.
+- Link details, new link rows and visit bars share the motion primitives. Skeletons,
+  row removal/layout interpolation and richer chart tooltips remain future work.
+- 31 Oct 2026: the custom `Select` (section 6) replaces all native selects. Its list
+  slides out of the trigger in 200 ms (clip-path reveal, 6 px shift, fade from 0.4) and
+  back in 150 ms on close, mirrored when it opens above. Input is blocked while it
+  closes. Reduced motion opens and closes it at once.
 - CSS motion runs only with `prefers-reduced-motion: no-preference`; changing the
   preference immediately restores final shapes. No motion package or permanent
   `will-change` layer is used.
@@ -276,9 +279,9 @@ under reduced motion, keep static bones. Errors replace bones with readable mess
 
 ## 6. Custom dropdown specification
 
-Current Group by, Category, and Account controls are native selects. The CSS chevron on
-Group by customizes only the closed control; operating-system popup appearance is not
-under app control. A custom popover is a proposed enhancement with a keyboard/focus cost.
+Shipped on 31 Oct 2026 as `components/Select.tsx` for Group by, Category, Account and
+the Meeting hour, duration and time-zone pickers. The contract below is the reference;
+the shipped slide is a clip-path reveal rather than only a 4 px move.
 
 Start with Group by as a short select-only combobox. Use an existing proven accessible
 primitive if the project later adopts one, or implement and test the full
