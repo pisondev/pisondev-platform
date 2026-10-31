@@ -10,6 +10,7 @@ const ASSISTANTS = [
   { href: "/finance", title: "Finance", note: "Balance, quota, subscriptions", bg: "bg-mint", fg: "text-green", ready: true },
   { href: "/links", title: "Links", note: "Short links, QR and visits", bg: "bg-sky", fg: "text-blue", ready: true },
   { href: "/meeting", title: "Meeting", note: "Find a time together", bg: "bg-sky", fg: "text-blue", ready: true },
+  { href: "/qr", title: "Link to QR", note: "Turn any link into a QR code", bg: "bg-mint", fg: "text-green", ready: true },
 ];
 
 export function Hub() {
@@ -26,7 +27,7 @@ export function Hub() {
       <div className="mt-60 grid grid-cols-2 gap-60 px-85">
         {ASSISTANTS.map((a) =>
           a.ready ? (
-            <Link key={a.href} href={a.href} className={`flex h-292 flex-col justify-between rounded-card p-32 ${a.bg} ${a.fg}`}>
+            <Link key={a.href} href={a.href} className={`flex min-h-292 flex-col justify-between gap-16 rounded-card p-32 ${a.bg} ${a.fg}`}>
               <span>
                 <span className="block text-heading">{a.title}</span>
                 <span className="block text-small opacity-80">{a.note}</span>
@@ -34,7 +35,7 @@ export function Hub() {
               <Chevron className="self-end text-[max(36px,calc(var(--spacing)*100))]" />
             </Link>
           ) : (
-            <div key={a.href} aria-disabled className={`flex h-292 flex-col justify-between rounded-card p-32 opacity-60 ${a.bg} ${a.fg}`}>
+            <div key={a.href} aria-disabled className={`flex min-h-292 flex-col justify-between gap-16 rounded-card p-32 opacity-60 ${a.bg} ${a.fg}`}>
               <span>
                 <span className="block text-heading">{a.title}</span>
                 <span className="block text-small opacity-80">{a.note}</span>

@@ -1,6 +1,6 @@
 # Roadmap
 
-Status as of 30 Oct 2026.
+Status as of 31 Oct 2026.
 
 ## Done
 
@@ -9,6 +9,7 @@ Status as of 30 Oct 2026.
   see [meeting.md](meeting.md).
 
 - Link shortener at `go.pisondev.com` with the `/links` page ([links.md](links.md)).
+- Link to QR at `/qr`: a private, browser-only QR generator with PNG download.
 - Private assistant workspace: Google sign-in for the two allowed accounts, Finance
   dashboard, Subscriptions, Weekly Spending Quota, add transaction.
 - PostgreSQL in two-way sync with Notion (and through it the Google Sheet).

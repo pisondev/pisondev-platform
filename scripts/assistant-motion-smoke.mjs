@@ -289,6 +289,31 @@ try {
   await wait(180);
   assert.equal(await tile.evaluate((n) => getComputedStyle(n).transform), "matrix(1, 0, 0, 1, 0, -2)");
   await screenshot(page, "hub-1440.png");
+
+  // Link to QR: a Hub tile opens a browser-only generator.
+  await page.getByRole("link", { name: /^Link to QR/ }).click();
+  await page.waitForURL("**/qr");
+  await page.getByLabel("Link", { exact: true }).fill("example.com/a");
+  assert.equal(await page.getByText("Encodes https://example.com/a").count(), 1);
+  await page.getByRole("img", { name: "QR code for https://example.com/a" }).waitFor();
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download PNG" }).click()]);
+  assert.equal(download.suggestedFilename(), "qr-example-com.png");
+  await page.getByLabel("Link", { exact: true }).fill(`https://example.com/${"x".repeat(2100)}`);
+  assert.equal(await page.getByRole("img", { name: /^QR code for/ }).count(), 0);
+  assert.equal(await page.getByLabel("Link", { exact: true }).getAttribute("aria-invalid"), "true");
+  await page.getByLabel("Link", { exact: true }).fill("https://pisondev.com");
+  for (const width of [320, 390, 480, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await noOverflow(page);
+    await page.goto("/");
+    await ready(page);
+    await noOverflow(page);
+    if (width === 320) await screenshot(page, "hub-320.png");
+    await page.goto("/qr");
+    await page.getByLabel("Link", { exact: true }).fill("https://pisondev.com");
+    if (width === 390) await screenshot(page, "qr-390.png");
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
   const reduced = await context({ reducedMotion: "reduce" });
   const reducedPage = await reduced.newPage();
   await reducedPage.goto("/finance");

@@ -232,7 +232,9 @@ Tab to leave. Pass `aria-label` even inside a `<label>`.
 
 ### Navigation tiles and buttons
 
-Hub uses a two-column grid with `px-85 gap-60 mt-60`, tile `p-32`, and `h-292`.
+Hub uses a two-column grid with `px-85 gap-60 mt-60`, tile `p-32`, and a `min-h-292` that
+grows with the title and note. Its four tiles (Finance, Links, Meeting, Link to QR)
+alternate mint and sky in a checkerboard.
 Finance uses `NavTile` (31 Oct 2026) in a `px-85 gap-40 mt-58` grid that stacks into one
 column below 360 CSS px. `NavTile({ href, title, icon, tone, children })` keeps the
 sky/mint identity as a light gradient from the token toward white, a hairline tinted
