@@ -25,7 +25,7 @@ const link = {
 const endpoints = {
   "/auth/me": { email: "demo@example.test", role: "main" },
   "/finance/summary": { balance: 1250000 },
-  "/finance/cashflow": { points: [{ label: "Sep", income: 500000, outcome: 100000, net: 400000 }, { label: "Oct", income: 200000, outcome: 400000, net: -200000 }] },
+  "/finance/cashflow": { points: [{ label: "Sep", start: "2026-09-01", end: "2026-09-30", income: 500000, outcome: 100000, net: 400000 }, { label: "Oct", start: "2026-10-01", end: "2026-10-31", income: 200000, outcome: 400000, net: -200000 }] },
   "/finance/transactions": [],
   "/finance/quota": quota,
   "/finance/options": { Category: ["Makan", "Other"], Account: ["Mandiri Debit"] },
@@ -125,6 +125,14 @@ try {
   assert.equal(await point.getAttribute("aria-pressed"), "false");
   assert.equal(await tips.count(), 0);
   await screenshot(page, "finance-390.png");
+  // The table's detail icon opens the cash flow page with the same view.
+  await page.getByRole("link", { name: "Open cash flow details", exact: true }).click();
+  await page.waitForURL("**/finance/cashflow?group=weekly&kind=all");
+  await ready(page);
+  assert.equal(await page.getByRole("combobox", { name: "Group by", exact: true }).innerText(), "Weekly");
+  assert.ok(await page.getByRole("heading", { name: "Transactions", exact: true }).isVisible());
+  await noOverflow(page);
+  await screenshot(page, "cashflow-390.png");
 
   await page.goto("/finance/subscriptions");
   await ready(page);

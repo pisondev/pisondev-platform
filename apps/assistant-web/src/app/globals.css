@@ -322,6 +322,8 @@ body {
   main:has(.assistant-header) a.rounded-card:not([aria-disabled="true"]):hover { transform: translateY(-2px); }
   main:has(.assistant-header) a.rounded-card .font-chevron { transition: transform var(--motion-fast) var(--motion-ease-out); }
   main:has(.assistant-header) a.rounded-card:hover .font-chevron { transform: translateX(2px); }
+  main:has(.assistant-header) .detail-link-arrow { transition: transform var(--motion-fast) var(--motion-ease-out); }
+  main:has(.assistant-header) .detail-link:hover .detail-link-arrow { transform: translate(1.5px, -1.5px); }
   :where(main:has(.assistant-header), .transaction-overlay) button:not(:disabled):not([aria-pressed]):hover {
     filter: brightness(0.97);
   }

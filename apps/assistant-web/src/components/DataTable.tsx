@@ -11,7 +11,8 @@ export type Column<T> = {
 
 /**
  * Table card from the design: grey header with a dark rule, light row rules, and a
- * scroll area showing `visibleRows` rows at a time.
+ * scroll area showing `visibleRows` rows at a time. `action` sits at the right end of the
+ * header (for example a DetailLink), so keep the last column's label short.
  */
 export function DataTable<T>({
   columns,
@@ -22,6 +23,7 @@ export function DataTable<T>({
   empty = "Nothing yet.",
   rowClassName,
   rowStyle,
+  action,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -31,6 +33,7 @@ export function DataTable<T>({
   empty?: string;
   rowClassName?: (row: T, index: number) => string;
   rowStyle?: (row: T, index: number) => CSSProperties;
+  action?: ReactNode;
 }) {
   const template = columns.map((c) => `${c.width}fr`).join(" ");
   const rowHeight = size === "body" ? "max(calc(var(--spacing) * 64), 32px)" : "max(calc(var(--spacing) * 61), 28px)";
@@ -39,12 +42,13 @@ export function DataTable<T>({
 
   return (
     <div className={`px-18 pb-18 ${text}`}>
-      <div className="grid items-center gap-x-12 border-b-[max(1.5px,calc(var(--spacing)*3))] border-muted px-6 pt-8 pb-6 text-muted" style={grid}>
+      <div className="relative grid items-center gap-x-12 border-b-[max(1.5px,calc(var(--spacing)*3))] border-muted px-6 pt-8 pb-6 text-muted" style={grid}>
         {columns.map((c) => (
           <span key={c.key} className={c.align === "center" ? "text-center" : ""}>
             {c.label}
           </span>
         ))}
+        {action ? <span className="absolute top-1/2 right-0 -translate-y-1/2">{action}</span> : null}
       </div>
       <div className="scroll-thin overflow-y-auto pr-12" style={{ maxHeight: `calc(${visibleRows} * ${rowHeight})` }}>
         {rows.length === 0 ? (

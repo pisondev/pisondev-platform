@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { shortDate, signedRupiah } from "@/lib/format";
-import type { Cashflow, Summary, Transaction } from "@/lib/types";
+import type { Cashflow, CashflowKind as Kind, Granularity, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
-import { CashflowChart, type CashflowSeries } from "../Charts";
+import { CashflowChart, cashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Select } from "../Select";
-import { Card, Chevron, Figure, Note, PageHeader, Panel, Toggle } from "../ui";
-
-type Kind = "all" | "income" | "outcome";
-type Granularity = "monthly" | "weekly";
+import { Card, Chevron, DetailLink, Figure, Note, PageHeader, Panel, Toggle } from "../ui";
 
 export function FinanceDashboard() {
   const [kind, setKind] = useState<Kind>("all");
@@ -20,15 +17,7 @@ export function FinanceDashboard() {
   const cashflow = useApi<Cashflow>(`/finance/cashflow?granularity=${granularity}`);
   const txs = useApi<Transaction[]>(`/finance/transactions?kind=${kind}&limit=100`);
 
-  const { labels, series } = useMemo(() => {
-    const pts = cashflow.data?.points ?? [];
-    const income: CashflowSeries = { name: "Income", color: "var(--color-leaf)", values: pts.map((p) => p.income) };
-    const outcome: CashflowSeries = { name: "Outcome", color: "var(--color-maroon)", values: pts.map((p) => p.outcome) };
-    return {
-      labels: pts.map((p) => p.label),
-      series: kind === "income" ? [income] : kind === "outcome" ? [outcome] : [income, outcome],
-    };
-  }, [cashflow.data, kind]);
+  const { labels, series } = useMemo(() => cashflowSeries(cashflow.data?.points ?? [], kind), [cashflow.data, kind]);
 
   return (
     <>
@@ -75,6 +64,7 @@ export function FinanceDashboard() {
           <DataTable<Transaction>
             size="small"
             visibleRows={4}
+            action={<DetailLink href={`/finance/cashflow?group=${granularity}&kind=${kind}`} label="Open cash flow details" />}
             rows={txs.data ?? []}
             rowKey={(t) => t.id}
             empty={txs.loading ? "Loading..." : txs.error ? txs.error.message : "No transactions."}

@@ -27,7 +27,9 @@ export type CashflowPoint = {
   net: number;
 };
 
-export type Cashflow = { granularity: "monthly" | "weekly"; points: CashflowPoint[] };
+export type Granularity = "monthly" | "weekly";
+export type CashflowKind = "all" | "income" | "outcome";
+export type Cashflow = { granularity: Granularity; points: CashflowPoint[] };
 
 export type SubItem = {
   id: string;

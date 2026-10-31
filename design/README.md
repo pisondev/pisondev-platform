@@ -31,6 +31,7 @@ Source: Figma file "Personal Platform", page 1, mobile frames 1080 px wide:
 | Home Dashboard | `/finance` |
 | Subscriptions (page, chart and table cases) | `/finance/subscriptions` |
 | Weekly Spending Quota (page, progress bar cases) | `/finance/quota` |
+| Cash Flow detail (no Figma frame; reuses Finance parts) | `/finance/cashflow` |
 
 The home hub `/` and the login page are not in Figma; they reuse the same tokens.
 

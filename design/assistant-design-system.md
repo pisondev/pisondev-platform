@@ -258,6 +258,18 @@ circular add button `max(34px, 68s)`; move them to `Button` when they are next c
   not provide a reliable touch or keyboard detail view.
 - `rowKey` must remain stable. `rowStyle` colors subscriptions; cell classes color signs.
 - The implementation uses `div`/`span`, without native table semantics.
+- `action` places one control at the right end of the header, vertically centered and
+  outside the grid, so the header height does not change. Keep the last label short.
+  Finance uses it for the `DetailLink` to `/finance/cashflow`.
+
+### `DetailLink`
+
+`DetailLink({ href, label })` in `ui.tsx` (added 31 Oct 2026) is the standard way to open
+a detail page: a window glyph with an arrow leaving its top-right corner, 17 CSS px inside
+a 32 CSS px target, muted until hover. `label` is its accessible name and tooltip. The
+arrow nudges 1.5 px on fine-pointer hover. It opens in the same tab; the detail page's
+`PageHeader` back link returns. Carry the current view in the query string when the
+detail page can start from it (Finance passes `group` and `kind`).
 
 Example subscription widths are `86:180:228:320`; expense widths are `86:170:228:330`.
 Preserve the component's header/row geometry when adding columns or loading placeholders.

@@ -108,6 +108,26 @@ export function Chevron({ className = "" }: { className?: string }) {
   );
 }
 
+/**
+ * Opens a detail page: the usual window-with-arrow icon. A 32 px target around a small
+ * glyph, so it fits in a table header without changing its height.
+ */
+export function DetailLink({ href, label, className = "" }: { href: string; label: string; className?: string }) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      className={`detail-link inline-flex size-[32px] items-center justify-center rounded-[8px] text-muted hover:bg-panel hover:text-ink ${className}`}
+    >
+      <svg aria-hidden viewBox="0 0 24 24" className="size-[17px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
+        <path className="detail-link-arrow" d="M14 4h6v6M20 4l-9 9" />
+      </svg>
+    </Link>
+  );
+}
+
 const BUTTON_VARIANTS = {
   primary: "bg-[linear-gradient(90deg,var(--color-green),var(--color-gold))] px-40 font-bold text-white",
   secondary: "bg-panel px-32 text-ink hover:bg-track",

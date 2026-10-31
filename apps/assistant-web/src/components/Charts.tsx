@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { rupiah } from "@/lib/format";
+import type { CashflowKind, CashflowPoint } from "@/lib/types";
 import { ChartMarks } from "./Motion";
 
 /*
@@ -177,6 +178,16 @@ export function SavingsChart({ target, now }: { target: number; now: number }) {
 // Cash flow: one line per series (income, outcome) with drop lines (card 847 x 496).
 
 export type CashflowSeries = { name: string; color: string; values: number[] };
+
+/** Chart input for a filter: income green, outcome red, both for "all". */
+export function cashflowSeries(points: CashflowPoint[], kind: CashflowKind) {
+  const income: CashflowSeries = { name: "Income", color: "var(--color-leaf)", values: points.map((p) => p.income) };
+  const outcome: CashflowSeries = { name: "Outcome", color: "var(--color-maroon)", values: points.map((p) => p.outcome) };
+  return {
+    labels: points.map((p) => p.label),
+    series: kind === "income" ? [income] : kind === "outcome" ? [outcome] : [income, outcome],
+  };
+}
 
 export function CashflowChart({ labels, series, toggle }: { labels: string[]; series: CashflowSeries[]; toggle: ReactNode }) {
   const VW = 847, VH = 496, AX = 40, BOTTOM = 508, TOP = 175, RIGHT = 770;

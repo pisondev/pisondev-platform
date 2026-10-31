@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-10-31: Cash Flow detail page at `/finance/cashflow`, opened from a new detail icon
+  (window with arrow) in the top-right corner of the Finance transaction table. It keeps
+  the table's Monthly/Weekly and All/Income/Outcome view and shows the chart, a table of
+  income, outcome and net per period, period totals, and up to 500 transactions with
+  category, filterable by period. `DetailLink` and the `DataTable` header `action` slot
+  make the icon reusable for other detail pages.
+
 - 2026-10-31: Cash Flow points show their amount in the series color on hover or keyboard
   focus. A click (or Enter/Space) pins the amount with a larger dot; a second click
   removes it. Pins clear when the filter or period changes.
