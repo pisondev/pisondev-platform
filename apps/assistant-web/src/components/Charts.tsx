@@ -196,7 +196,8 @@ export function cashflowSeries(points: CashflowPoint[], kind: CashflowKind) {
 }
 
 export function CashflowChart({ labels, series, toggle }: { labels: string[]; series: CashflowSeries[]; toggle: ReactNode }) {
-  const VW = 847, VH = 496, AX = 40, BOTTOM = 508, TOP = 175, RIGHT = 770;
+  // TOP leaves room for the toggle and the stacked legend in the top-right corner.
+  const VW = 847, VH = 496, AX = 40, BOTTOM = 508, TOP = 235, RIGHT = 770;
   const n = labels.length;
   const values = series.flatMap((s) => s.values);
   const lo = Math.min(0, ...values), hi = Math.max(0, ...values);
@@ -340,15 +341,17 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
             No transactions yet.
           </Label>
         ) : null}
-        <div className="absolute top-[3%] right-[3%]">{toggle}</div>
-      </div>
-      <div className="flex justify-center gap-40 pb-20 text-small">
-        {series.map((s) => (
-          <span key={s.name} className="flex items-center gap-10" style={{ color: s.color }}>
-            <span aria-hidden className="inline-block h-[3px] w-40 rounded-full" style={{ background: s.color }} />
-            {s.name}
-          </span>
-        ))}
+        <div className="absolute top-[3%] right-[3%] flex flex-col items-end gap-10">
+          {toggle}
+          <ul className="grid justify-items-end gap-4 pr-8 text-small leading-tight">
+            {series.map((s) => (
+              <li key={s.name} className="flex items-center gap-10" style={{ color: s.color }}>
+                <span aria-hidden className="inline-block h-[3px] w-40 rounded-full" style={{ background: s.color }} />
+                {s.name}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

@@ -262,6 +262,13 @@ try {
       }),
     );
     assert.deepEqual(spills, [], `Tile content spills at ${width}px`);
+    // The stacked legend under the toggle must end above the plot's top (y 235 of 546).
+    const legendGap = await page.locator('svg[aria-label^="Cash flow chart"]').evaluate((svg) => {
+      const box = svg.getBoundingClientRect();
+      const legend = svg.parentElement.querySelector("ul").getBoundingClientRect();
+      return box.top + (235 / 546) * box.height - legend.bottom;
+    });
+    assert.ok(legendGap >= 0, `Legend reaches into the plot at ${width}px`);
     if (width !== 1440) await screenshot(page, `finance-tiles-${width}.png`);
   }
   Object.assign(quota, { spent: 625000, remaining: -125000, percent: 125, level: "red" });
