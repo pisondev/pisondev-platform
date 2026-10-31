@@ -66,6 +66,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - 2026-10-31: Cash Flow legend moved from below the chart to the top-right corner,
   stacked vertically under the All/Income/Outcome toggle.
+- 2026-10-31: Finance tile icons are larger line icons without the white round badge.
 
 - 2026-10-31: Finance navigation tiles (Subscriptions, Weekly Spending Quota) use a new
   `NavTile`: tinted gradient, corner ring, icon badge, and a live summary (monthly

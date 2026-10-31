@@ -237,7 +237,7 @@ Finance uses `NavTile` (31 Oct 2026) in a `px-85 gap-40 mt-58` grid that stacks 
 column below 360 CSS px. `NavTile({ href, title, icon, tone, children })` keeps the
 sky/mint identity as a light gradient from the token toward white, a hairline tinted
 edge, a soft colored shadow, and a glow with a thin ring in the bottom-right corner
-behind the content. An icon badge (white, tinted edge) sits above the heading-size
+behind the content. A line icon (`max(34px, 100s)`, no badge) sits above the heading-size
 title; `children` is a small live summary (Subscriptions: monthly total and counts;
 Quota: amount left, a mini bar in the quota fill gradient, percent used). Height is a
 292-unit minimum that grows with content, so the chevron never leaves the tile.
