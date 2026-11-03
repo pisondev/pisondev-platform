@@ -1,7 +1,7 @@
 # Meeting availability
 
 Implemented on 27 Oct 2026 and released on the existing assistant host on 30 Oct 2026.
-This first Meeting feature collects availability, compares responses, and confirms a
+This Meeting feature collects availability, compares responses, and confirms a
 meeting time. It uses the existing Next.js app, Go API, and PostgreSQL. It does not
 create video meeting rooms.
 
@@ -23,7 +23,7 @@ Google Meet creation are outside this feature.
 
 | Concern | Decision in Pison Meet |
 |---|---|
-| Planning | Guided form with a month calendar, removable date chips, duration, and preview |
+| Planning | Compact form with a month calendar, removable date chips, and duration |
 | Sharing | One unguessable invitation URL; guests do not need an account |
 | Editing | An opaque browser edit key identifies a response; display names do not grant access |
 | Availability | Binary available/unselected intervals; an empty response means no suitable time |
@@ -132,16 +132,25 @@ create events in a connected account.
 
 ## Interface and accessibility
 
-Meeting uses warm off-white surfaces, forest actions, lime heatmap levels, system
-sans-serif type, and a separate wide desktop layout. It becomes a single column on
-small screens; only the calendar scrolls in two dimensions. Date headings and the time
-column stay visible while scrolling.
+The UI was simplified on 3 Nov 2026: neutral surfaces, restrained green actions,
+plain Indonesian labels, and a compact creation form. Desktop places the calendar
+beside time settings and poll results beside availability; phones use one column.
+Decorative previews, slogans, synthetic avatars, and redundant cards were removed.
 
-Mouse/pen users paint rectangular ranges; starting on a selected cell erases. Touch
-users tap cells while retaining calendar scrolling. The calendar has one tab stop,
-arrow-key navigation, Space/Enter selection, and labels with local time and offset.
-Select all and Clear selection offer shortcuts. The draft remains until Save; switching
-views preserves it. Unsaved changes activate the browser unload guard.
+Invitations open directly in personal availability. One panel shows every date in a
+wrapping grid and up to sixteen labeled 15-minute buttons for the active date. Longer
+windows use explicit time-range buttons, up to six groups for a 24-hour day. There is
+no horizontal or vertical scrolling inside the date/time picker. The surrounding page
+scrolls normally on small devices. Dates with selections have a dot; drafts persist
+across date, time-range, view, and zone changes. A day-level shortcut selects or clears
+all times on that date, including other time ranges. Global shortcuts are explicit.
+
+Mouse/pen users paint contiguous intervals within the visible date and time range;
+touch users tap buttons. Four-column time navigation uses arrows, Home/End, and
+Space/Enter, with one tab stop for the visible time choices. Group buttons expose
+actual participant counts and named inspection; selecting a recommendation opens
+its date and time range directly. Repeated DST times retain their offset labels.
+All choices are drafts until Save. Closed polls disable editing.
 
 The native modal supports Escape, focus restoration, scroll lock, and disabled dismissal
 while saving. Feedback uses live regions. Motion respects reduced-motion preferences.
@@ -176,7 +185,8 @@ Verification for this implementation:
   IANA offsets, DST, complete duration intersections, retry keys, stale versions,
   owner/public permissions, CSRF rejection, and concurrent edit/finalization.
 - TypeScript and production build with `pnpm build --webpack`.
-- Chromium at 320/390/480/1440 px without page overflow; drag, keyboard, touch,
+- Chromium at 320/390/480/768/1024/1440 px without page overflow; compact 14-date,
+  24-hour windows without nested scrolling; range drag, keyboard, touch,
   separate guests, persistence, empty responses, time zones, stale-tab recovery,
   dialog focus, repeated DST-hour ordering and offset labels, owner confirmation, closed-poll rejection, calendar download, reopen,
   errors/retry, blocked browser storage, offline recovery, and preservation of the

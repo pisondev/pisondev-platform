@@ -1,45 +1,51 @@
 # Meeting UI
 
-Implemented 27 Oct 2026 for `/meeting/availability`. Product behavior, reference analysis,
-API contracts, and verification are in [Meeting availability](../docs/meeting.md).
+Updated 3 Nov 2026 for `/meeting/availability`. API contracts and persistence remain
+in [Meeting availability](../docs/meeting.md).
 
-Meeting is a separate surface from the private Assistant. Its scoped styles deliberately
-use a wide sans-serif layout to support a modern scheduling interface. Existing
-Assistant screens keep their narrow serif layout.
+## Layout
 
-## Visual language
+Meeting uses a separate system-sans surface from the private Assistant. The shell is
+1,184 px including gutters, with neutral off-white backgrounds, white panels, subtle
+borders, and green primary actions. Headings and controls use direct Indonesian copy.
+There are no marketing slogans, decorative mock calendars, or synthetic avatars on
+the creation page.
 
-- Canvas `#f7f8f4`, white cards, quiet `#e2e7df` borders.
-- Forest actions `#234b36`; six heatmap levels from `#eff2eb` to `#3b6941`.
-- Calendar mark, lime accents, compact badges, and participant initials.
-- Maximum 1,344 px shell including gutters. Creation uses form/preview columns; events
-  use calendar/results columns. Main layouts stack at 820 px, result cards at 540 px.
-- System sans-serif, a larger creation headline, compact event heading. Explanatory
-  copy uses Indonesian; short controls and headings use English.
+Creation uses one form: title and optional agenda above the month calendar and time
+settings. Those settings sit beside the calendar on desktop and below it on phones.
+Invitations put availability first, with recommendations and participants in a desktop
+sidebar. Below 820 px, results follow availability; phone recommendations use two
+columns. Inputs use 16 px text on phones to avoid automatic input zoom.
 
-The form preview is explicitly illustrative. The demo has five synthetic participants
-and a visible banner. Real polls start empty. Counts and recommendations use saved
-responses; unsaved selections remain local drafts.
+## Compact availability
 
-## Interaction states
+- Every date appears in the same wrapping grid; no horizontal date strip.
+- One active date shows up to 16 actual 15-minute intervals in four columns.
+- Longer windows have labeled range buttons, rather than a vertical time scroller.
+- All date and range buttons remain visible. The panel has no internal scroll region.
+  The surrounding document scrolls normally on smaller screens.
+- Dates with personal selections show a dot. A day shortcut selects/clears every slot
+  on that date. Global selection/clear actions explicitly apply to all dates.
+- Group view uses six heat levels plus actual counts, participant filtering, and named
+  slot inspection. Recommendations open their date/range directly without scrolling.
+- Draft choices survive date, range, mode, and timezone changes. Only Save persists.
+- Repeated DST hours remain chronological and include distinct UTC offsets.
 
-The flow is create → share → mark availability → compare → confirm. Personal/group
-views use pressed button groups. An unsaved dot and save footer identify the draft.
-Loading, empty, missing, retry, offline, stale, saved, confirmed, and reopened states
-have specific copy and actions.
+Guests start in personal availability. Mouse/pen dragging selects contiguous intervals
+within the visible range; touch uses taps. Arrows move through the four-column time
+choices, Home/End jump within the range, and Space/Enter toggles. There is one tab stop
+for the visible time buttons. All controls have focus indicators and pressed states.
 
-Zone changes preserve the actual selected instants. A recommendation highlights its
-entire duration and scrolls the calendar to its start. Clicking a participant filters
-only the group calendar; recommendations still represent everyone. Confirmation
-makes partial attendance explicit.
+Loading, missing, retry, offline, stale, unsaved, saved, confirmed, and reopened states
+remain explicit. The confirmation dialog preserves its native focus boundary, Escape,
+focus restoration, and busy dismissal rules. Motion remains brief and optional.
 
-Motion is brief and optional. Reduced motion makes the modal appear directly and
-recommendation scrolling immediate. Keyboard navigation and focus never wait for it.
+## Verification and references
 
-## Synthetic references
-
-Captures use the demo and public creation form. They contain no private finance,
-production sessions, or real participant data.
+`scripts/meeting-smoke.mjs` checks responsive creation/invitations, a 14-date/24-hour
+poll without internal scrolling at 320/390/480/768/1024/1440 px, date/range draft
+preservation, touch, range dragging, keyboard, DST, persistence, stale responses,
+permissions, confirmation/reopen, and calendar export. All data is synthetic.
 
 | Desktop poll | Desktop creation |
 |---|---|

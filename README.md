@@ -76,7 +76,9 @@ link and mark availability without signing in. The heatmap ranks complete meetin
 windows; the owner can confirm a time, export a calendar file, or reopen the poll.
 Responses persist in PostgreSQL with private browser edit keys.
 
-Meeting has its own responsive UI. See [analysis, API and rollout](docs/meeting.md)
+Meeting has its own responsive UI: a compact date/time picker with wrapping dates,
+16 time choices per range, and no scrolling inside the picker. Desktop uses a results
+sidebar; phones use a single column. See [analysis, API and rollout](docs/meeting.md)
 and [UI references](design/meeting-ui.md). A separate `meeting.pisondev.com` host is
 future work; the current release uses the existing assistant host and sign-in.
 

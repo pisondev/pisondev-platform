@@ -22,14 +22,14 @@ export function MeetingShell({ children }: { children: React.ReactNode }) {
           </Link>
           <nav aria-label="Meeting navigation">
             <Link href={MEETING_PATH} className="m-nav-active">
-              Find a time
+              Buat meeting
             </Link>
             <Link href={`${MEETING_PATH}/demo`}>
-              Try the demo <Icon name="arrow" size={15} />
+              Demo <Icon name="arrow" size={15} />
             </Link>
           </nav>
           <Link className="m-workspace-link" href="/">
-            My workspace <Icon name="grid" size={16} />
+            Workspace <Icon name="grid" size={16} />
           </Link>
         </div>
       </header>
@@ -38,10 +38,7 @@ export function MeetingShell({ children }: { children: React.ReactNode }) {
         <Link href={MEETING_PATH} className="m-footer-brand">
           pison / meet
         </Link>
-        <span>A little less planning. A lot more meeting.</span>
-        <span>
-          Made for time together <span className="m-footer-dot" />
-        </span>
+        <span>Jadwal bersama, lewat satu link.</span>
       </footer>
     </div>
   );

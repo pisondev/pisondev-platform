@@ -70,29 +70,24 @@ async function noOverflow(page) {
     `Page overflow at ${sizes.viewport}px: ${sizes.page}px`,
   );
 }
-async function edit(page, current = false) {
-  await page
-    .locator(".m-event-actions")
-    .getByRole("button", {
-      name: current ? "Edit your availability" : "Add your availability",
-      exact: true,
-    })
-    .click();
-  await visible(page.getByLabel("Your name", { exact: true }));
+async function edit(page) {
+  await page.getByRole("button", { name: "Waktu saya", exact: true }).click();
+  await visible(page.getByLabel("Nama kamu", { exact: true }));
 }
-async function dragRectangle(page, fromDay, fromRow, toDay, toRow) {
-  const from = page.locator(
-    `button[data-day="${fromDay}"][data-row="${fromRow}"]`,
-  );
-  const to = page.locator(`button[data-day="${toDay}"][data-row="${toRow}"]`);
-  await from.scrollIntoViewIfNeeded();
-  const a = await from.boundingBox(),
-    b = await to.boundingBox();
-  assert.ok(a && b);
-  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
-  await page.mouse.up();
+async function dragDateRanges(page, fromDay, fromRow, toDay, toRow) {
+  for (let day = fromDay; day <= toDay; day++) {
+    await page.locator(".m-day-options button").nth(day).click();
+    const from = page.locator(`button[data-row="${fromRow}"]`);
+    const to = page.locator(`button[data-row="${toRow}"]`);
+    await from.scrollIntoViewIfNeeded();
+    const a = await from.boundingBox(), b = await to.boundingBox();
+    assert.ok(a && b);
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+    await page.mouse.up();
+  }
+  await page.locator(".m-day-options button").nth(fromDay).click();
 }
 
 let pollId;
@@ -131,34 +126,34 @@ try {
   await demo.goto("/meeting/availability/demo");
   await settled(demo);
   await edit(demo);
-  await demo.getByLabel("Your name", { exact: true }).fill("Demo Guest");
-  await dragRectangle(demo, 0, 0, 1, 3);
+  await demo.getByLabel("Nama kamu", { exact: true }).fill("Demo Guest");
+  await dragDateRanges(demo, 0, 0, 1, 3);
   assert.equal(
     await demo.locator(".m-slot-selected").count(),
-    8,
-    "Rectangle drag must select 2 days × 4 intervals",
+    4,
+    "Range drag selects four visible intervals on each date",
   );
   const first = demo.locator('button[data-day="0"][data-row="0"]');
   await first.focus();
   await first.press("Space");
   assert.equal(
     await demo.locator(".m-slot-selected").count(),
-    7,
+    3,
     "Keyboard Space must toggle the slot",
   );
   await first.press("Space");
   await first.press("ArrowDown");
   assert.equal(
     await demo
-      .locator('button[data-day="0"][data-row="1"]')
+      .locator('button[data-day="0"][data-row="4"]')
       .evaluate((el) => el === document.activeElement),
     true,
   );
   await demo
-    .getByRole("button", { name: "Save availability", exact: true })
+    .getByRole("button", { name: "Simpan jawaban", exact: true })
     .click();
   await visible(
-    demo.getByRole("status").filter({ hasText: "Jawaban demo ditambahkan" }),
+    demo.getByRole("status").filter({ hasText: "Jawaban demo disimpan" }),
   );
   assert.equal(await demo.locator(".m-participant").count(), 6);
   await chooseOption(demo, "Display time zone", "New York");
@@ -166,8 +161,10 @@ try {
   const recs = demo.locator(".m-recommendation-main");
   assert.ok((await recs.count()) > 0);
   await recs.first().click();
+  assert.ok(await demo.locator(".m-slot-highlighted").count() > 0,
+    "A recommendation must open its date and time range directly");
   await demo
-    .getByRole("button", { name: "Confirm this time", exact: true })
+    .getByRole("button", { name: "Tetapkan jadwal", exact: true })
     .click();
   await visible(demo.getByRole("dialog"));
   await demo.keyboard.press("Escape");
@@ -178,13 +175,13 @@ try {
   );
   assert.equal(
     await demo
-      .getByRole("button", { name: "Confirm this time", exact: true })
+      .getByRole("button", { name: "Tetapkan jadwal", exact: true })
       .evaluate((el) => el === document.activeElement),
     true,
     "Dialog must restore focus",
   );
   console.log(
-    "PASS: rectangle drag, keyboard toggles/navigation, demo save, time zones, dialog dismissal/focus",
+    "PASS: range drag, keyboard toggles/navigation, demo save, time zones, dialog dismissal/focus",
   );
 
   // A repeated DST hour must appear after the complete first hour, not interleaved.
@@ -212,11 +209,60 @@ try {
   const renderedSlots = await dst.locator("button[data-slot]").evaluateAll((cells) =>
     cells.map((cell) => cell.dataset.slot),
   );
-  assert.deepEqual(renderedSlots, dstSlots, "Repeated DST hours must stay in chronological order");
+  assert.deepEqual(renderedSlots, dstSlots.slice(0, 16), "Repeated DST hours must stay in chronological order");
   assert.match(await dst.locator('button[data-slot="2026-11-01T05:00:00Z"]').getAttribute("aria-label"), /GMT-4/);
   assert.match(await dst.locator('button[data-slot="2026-11-01T06:00:00Z"]').getAttribute("aria-label"), /GMT-5/);
+  await dst.locator(".m-time-pages button").nth(1).click();
+  assert.deepEqual(await dst.locator("button[data-slot]").evaluateAll((cells) => cells.map((cell) => cell.dataset.slot)), dstSlots.slice(16));
   await dst.close();
   console.log("PASS: repeated DST hours stay chronological and expose distinct offsets");
+
+  // The largest allowed poll stays in one panel, with no nested scroll region.
+  const compactContext = await context({ timezoneId: "UTC" });
+  const compact = await compactContext.newPage();
+  const compactSlots = Array.from({ length: 14 * 96 }, (_, i) =>
+    new Date(Date.parse("2030-01-01T00:00:00Z") + i * 900000).toISOString().replace(".000Z", "Z"),
+  );
+  await compact.route("**/api/v1/meeting/polls/qa-compact", (route) => route.fulfill({ json: { data: {
+    id: "qa-compact", title: "Full schedule", description: "",
+    timezone: "UTC", dates: compactSlots.filter((_, i) => i % 96 === 0).map((slot) => slot.slice(0, 10)),
+    startHour: 0, endHour: 24, duration: 60, slots: compactSlots,
+    participants: [], recommendations: [], finalizedStart: null, createdAt: "2026-11-01T00:00:00Z",
+  } } }));
+  await compact.goto("/meeting/availability/qa-compact");
+  await visible(compact.locator(".m-day-options button").nth(13));
+  for (const width of [320, 390, 480, 768, 1024, 1440]) {
+    await compact.setViewportSize({ width, height: 844 });
+    await noOverflow(compact);
+    assert.equal(await compact.locator(".m-day-options button").count(), 14);
+    assert.equal(await compact.locator(".m-time-pages button").count(), 6);
+    assert.equal(await compact.locator("button[data-slot]").count(), 16);
+    const dimensions = await compact.locator(".m-picker").evaluate((el) => ({
+      height: el.getBoundingClientRect().height,
+      width: el.clientWidth, scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+    }));
+    assert.ok(dimensions.height < 650, `Picker too tall at ${width}px: ${dimensions.height}`);
+    assert.ok(dimensions.scrollWidth <= dimensions.width + 1 && dimensions.scrollHeight <= dimensions.clientHeight + 1,
+      `Picker requires scrolling at ${width}px`);
+  }
+  await compact.locator('button[data-index="0"]').click();
+  const originalSlot = await compact.locator('button[data-index="0"]').getAttribute("data-slot");
+  await compact.locator(".m-time-pages button").nth(5).click();
+  await compact.locator('button[data-index="15"]').click();
+  await compact.locator(".m-day-options button").nth(13).click();
+  await compact.getByRole("button", { name: "Pilih semua jam hari ini" }).click();
+  await compact.locator(".m-day-options button").nth(0).click();
+  assert.equal(await compact.locator(`button[data-slot="${originalSlot}"]`).getAttribute("aria-pressed"), "true");
+  await compact.locator(".m-time-pages button").nth(5).click();
+  assert.equal(await compact.locator('button[data-index="15"]').getAttribute("aria-pressed"), "true");
+  await compact.locator(".m-day-options button").nth(13).click();
+  await visible(compact.getByRole("button", { name: "Kosongkan tanggal ini" }));
+  await compact.getByRole("button", { name: "Kosongkan semua", exact: true }).click();
+  assert.equal(await compact.locator(".m-slot-selected").count(), 0);
+  await compact.setViewportSize({ width: 390, height: 844 });
+  await screenshot(compact, "390-full-schedule.png");
+  await compact.close();
+  console.log("PASS: 14 dates and 24-hour windows fit without nested scrolling; date/page changes preserve selections");
 
   const owner = await context();
   const config = await json(await owner.request.get("/api/v1/auth/config"));
@@ -235,15 +281,15 @@ try {
   await ownerPage.goto("/meeting/availability");
   await settled(ownerPage);
   await visible(
-    ownerPage.getByRole("button", { name: "Create poll & get a link" }),
+    ownerPage.getByRole("button", { name: "Buat poll & dapatkan link" }),
   );
   const title = `Meeting browser QA ${Date.now()} ${"日程".repeat(10)}`;
-  await ownerPage.getByLabel("What’s the occasion?").fill(title);
+  await ownerPage.getByLabel("Nama meeting").fill(title);
   await ownerPage
     .getByLabel("Meeting description")
     .fill("Synthetic, scheduling; test.\nNo external invitations.");
   await ownerPage
-    .getByRole("button", { name: "Create poll & get a link" })
+    .getByRole("button", { name: "Buat poll & dapatkan link" })
     .click();
   await ownerPage.waitForURL(/\/meeting\/availability\/[a-f0-9]+$/);
   await visible(ownerPage.getByRole("heading", { level: 1, name: title }));
@@ -263,7 +309,7 @@ try {
     "Preserve browser-detected zones outside the shortcut list",
   );
   assert.match(
-    await quarterPage.locator(".m-time-heading").innerText(),
+    await quarterPage.locator("button[data-slot]").first().getAttribute("aria-label"),
     /GMT\+5:45/,
   );
   await quarterPage.close();
@@ -274,15 +320,16 @@ try {
   await visible(guestPage.getByRole("heading", { level: 1, name: title }));
   assert.equal(
     await guestPage
-      .getByRole("button", { name: "Confirm this time", exact: true })
+      .getByRole("button", { name: "Tetapkan jadwal", exact: true })
       .count(),
     0,
   );
   await edit(guestPage);
-  await guestPage.getByLabel("Your name", { exact: true }).fill("Ayu Test");
-  await dragRectangle(guestPage, 0, 0, 1, 3);
+  await chooseOption(guestPage, "Display time zone", "Jakarta \u00b7 WIB");
+  await guestPage.getByLabel("Nama kamu", { exact: true }).fill("Ayu Test");
+  await dragDateRanges(guestPage, 0, 0, 1, 3);
   await guestPage
-    .getByRole("button", { name: "Save availability", exact: true })
+    .getByRole("button", { name: "Simpan jawaban", exact: true })
     .click();
   await visible(
     guestPage.getByRole("status").filter({ hasText: "Jawaban tersimpan" }),
@@ -290,16 +337,17 @@ try {
   await guestPage.reload();
   await settled(guestPage);
   await edit(guestPage, true);
+  await chooseOption(guestPage, "Display time zone", "Jakarta \u00b7 WIB");
   assert.equal(
     await guestPage.locator(".m-slot-selected").count(),
-    8,
-    "Saved availability must survive reload",
+    4,
+    "Saved availability must survive reload on the first date",
   );
   await guestPage
-    .getByRole("button", { name: "Clear selection", exact: true })
+    .getByRole("button", { name: "Kosongkan semua", exact: true })
     .click();
   await guestPage
-    .getByRole("button", { name: "Save changes", exact: true })
+    .getByRole("button", { name: "Simpan perubahan", exact: true })
     .click();
   await visible(
     guestPage.getByRole("status").filter({ hasText: "Jawaban tersimpan" }),
@@ -313,9 +361,9 @@ try {
     "Guests can explicitly submit no availability",
   );
   await edit(guestPage, true);
-  await dragRectangle(guestPage, 0, 0, 0, 3);
+  await dragDateRanges(guestPage, 0, 0, 0, 3);
   await guestPage
-    .getByRole("button", { name: "Save changes", exact: true })
+    .getByRole("button", { name: "Simpan perubahan", exact: true })
     .click();
   await visible(
     guestPage.getByRole("status").filter({ hasText: "Jawaban tersimpan" }),
@@ -330,7 +378,8 @@ try {
   await mobilePage.goto(invitation);
   await settled(mobilePage);
   await edit(mobilePage);
-  await mobilePage.getByLabel("Your name", { exact: true }).fill("Raka Test");
+  await chooseOption(mobilePage, "Display time zone", "Jakarta \u00b7 WIB");
+  await mobilePage.getByLabel("Nama kamu", { exact: true }).fill("Raka Test");
   for (let row = 0; row < 4; row++)
     await mobilePage.locator(`button[data-day="0"][data-row="${row}"]`).tap();
   assert.equal(
@@ -339,7 +388,7 @@ try {
     "Touch taps must select independently",
   );
   await mobilePage
-    .getByRole("button", { name: "Save availability", exact: true })
+    .getByRole("button", { name: "Simpan jawaban", exact: true })
     .tap();
   await visible(
     mobilePage.getByRole("status").filter({ hasText: "Jawaban tersimpan" }),
@@ -369,10 +418,10 @@ try {
   await settled(blockedPage);
   await edit(blockedPage);
   await blockedPage
-    .getByLabel("Your name", { exact: true })
+    .getByLabel("Nama kamu", { exact: true })
     .fill("Storage unavailable guest");
   await blockedPage
-    .getByRole("button", { name: "Save availability", exact: true })
+    .getByRole("button", { name: "Simpan jawaban", exact: true })
     .click();
   await visible(
     blockedPage
@@ -387,7 +436,7 @@ try {
   await blockedPage.close();
   await edit(guestPage, true);
   await guestPage
-    .getByLabel("Your name", { exact: true })
+    .getByLabel("Nama kamu", { exact: true })
     .fill("Offline draft");
   await guest.setOffline(true);
   await visible(
@@ -395,7 +444,7 @@ try {
   );
   assert.equal(
     await guestPage
-      .getByRole("button", { name: "Save changes", exact: true })
+      .getByRole("button", { name: "Simpan perubahan", exact: true })
       .isDisabled(),
     true,
   );
@@ -403,9 +452,9 @@ try {
   await guestPage.waitForFunction(
     () => !document.querySelector(".m-grid-footer button")?.disabled,
   );
-  await guestPage.getByLabel("Your name", { exact: true }).fill("Ayu Test");
+  await guestPage.getByLabel("Nama kamu", { exact: true }).fill("Ayu Test");
   await guestPage
-    .getByRole("button", { name: "Group availability", exact: true })
+    .getByRole("button", { name: "Jadwal bersama", exact: true })
     .click();
   console.log(
     "PASS: owner create, guest save/edit/reload, explicit unavailable response, mobile touch, edit keys, blocked storage, offline recovery",
@@ -416,25 +465,25 @@ try {
   await settled(secondTab);
   await edit(secondTab, true);
   await edit(guestPage, true);
-  await guestPage.getByLabel("Your name", { exact: true }).fill("Ayu Updated");
+  await guestPage.getByLabel("Nama kamu", { exact: true }).fill("Ayu Updated");
   await guestPage
-    .getByRole("button", { name: "Save changes", exact: true })
+    .getByRole("button", { name: "Simpan perubahan", exact: true })
     .click();
   await visible(
     guestPage.getByRole("status").filter({ hasText: "Jawaban tersimpan" }),
   );
-  await secondTab.getByLabel("Your name", { exact: true }).fill("Stale edit");
+  await secondTab.getByLabel("Nama kamu", { exact: true }).fill("Stale edit");
   await secondTab
-    .getByRole("button", { name: "Save changes", exact: true })
+    .getByRole("button", { name: "Simpan perubahan", exact: true })
     .click();
   await visible(
     secondTab.getByRole("alert").filter({ hasText: "another tab" }),
   );
   await secondTab
-    .getByRole("button", { name: "Load saved response", exact: true })
+    .getByRole("button", { name: "Muat jawaban tersimpan", exact: true })
     .click();
   assert.equal(
-    await secondTab.getByLabel("Your name", { exact: true }).inputValue(),
+    await secondTab.getByLabel("Nama kamu", { exact: true }).inputValue(),
     "Ayu Updated",
   );
   await secondTab.close();
@@ -445,24 +494,25 @@ try {
   await ownerPage.reload();
   await settled(ownerPage);
   const choices = ownerPage.locator(".m-recommendation-main");
+  await visible(choices.first());
   assert.ok((await choices.count()) > 0);
   await choices.first().click();
   await ownerPage
-    .getByRole("button", { name: "Confirm this time", exact: true })
+    .getByRole("button", { name: "Tetapkan jadwal", exact: true })
     .click();
   await visible(ownerPage.getByRole("dialog"));
   await ownerPage
     .getByRole("dialog")
-    .getByRole("button", { name: "Confirm this time", exact: true })
+    .getByRole("button", { name: "Tetapkan jadwal", exact: true })
     .click();
   await visible(
     ownerPage
-      .getByRole("heading", { name: "IT’S A DATE", exact: true })
+      .getByRole("heading", { name: "Jadwal meeting", exact: true })
       .or(ownerPage.locator(".m-final-banner")),
   );
   const downloadPromise = ownerPage.waitForEvent("download");
   await ownerPage
-    .getByRole("button", { name: "Add to calendar", exact: true })
+    .getByRole("button", { name: "Unduh kalender", exact: true })
     .click();
   const download = await downloadPromise;
   const file = path.join(output, "meeting.ics");
@@ -490,7 +540,7 @@ try {
   );
   assert.equal(closed.status(), 409);
   await ownerPage
-    .getByRole("button", { name: "Reopen poll", exact: true })
+    .getByRole("button", { name: "Buka kembali", exact: true })
     .click();
   await visible(
     ownerPage.getByRole("status").filter({ hasText: "Poll dibuka kembali" }),
@@ -513,10 +563,10 @@ try {
   );
   await failure.goto("/meeting/availability/qa-unavailable");
   await visible(
-    failure.getByRole("button", { name: "Try again", exact: true }),
+    failure.getByRole("button", { name: "Coba lagi", exact: true }),
   );
   await failure.unroute("**/api/v1/meeting/polls/qa-unavailable");
-  await failure.getByRole("button", { name: "Try again", exact: true }).click();
+  await failure.getByRole("button", { name: "Coba lagi", exact: true }).click();
   await visible(
     failure.getByRole("alert").filter({ hasText: "tidak ditemukan" }),
   );

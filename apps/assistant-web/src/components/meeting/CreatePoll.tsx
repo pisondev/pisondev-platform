@@ -24,7 +24,7 @@ const HOURS = Array.from({ length: 25 }, (_, h) => ({
 }));
 const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240].map((n) => ({
   value: n,
-  label: `${n} minutes`,
+  label: `${n} menit`,
 }));
 
 function defaults(): PollConfig {
@@ -109,7 +109,7 @@ export function CreatePoll() {
   const first = new Date(`${today.slice(0, 7)}-01T12:00:00Z`);
   first.setUTCMonth(first.getUTCMonth() + monthOffset);
   const month = first.toISOString().slice(0, 7);
-  const monthName = new Intl.DateTimeFormat("en", {
+  const monthName = new Intl.DateTimeFormat("id-ID", {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
@@ -173,66 +173,26 @@ export function CreatePoll() {
     <>
       <section className="m-hero">
         <div>
-          <span className="m-eyebrow">
-            <span className="m-live-dot" /> LESS BACK-AND-FORTH. MORE TOGETHER.
-          </span>
-          <h1>
-            Find a time.
-            <br />
-            <span>Make it happen.</span>
-          </h1>
-          <p>
-            Satu link untuk semua jadwal. Temukan waktu yang pas
-            <br className="m-desktop-break" /> tanpa chat panjang, tanpa
-            tebak-tebakan.
-          </p>
+          <h1>Tentukan waktu meeting.</h1>
+          <p>Pilih tanggal, bagikan link, dan lihat kapan semua bisa.</p>
         </div>
-        <div className="m-hero-aside">
-          <div className="m-avatar-stack">
-            {["NP", "RP", "DA", "AS"].map((p, i) => (
-              <span className={`m-avatar m-avatar-${i}`} key={p}>
-                {p}
-              </span>
-            ))}
-            <span className="m-avatar m-avatar-plus">
-              <Icon name="plus" size={15} />
-            </span>
-          </div>
-          <p>
-            Different schedules.
-            <br />
-            <strong>One shared moment.</strong>
-          </p>
-          <span className="m-hero-doodle" aria-hidden="true">
-            ↙
-          </span>
-        </div>
+        <Link href={`${MEETING_PATH}/demo`} className="m-button m-button-secondary">
+          Lihat contoh <Icon name="arrow" size={16} />
+        </Link>
       </section>
 
       <div className="m-create-layout">
         <section
           className="m-card m-create-card"
-          aria-labelledby="create-title"
+          aria-label="Buat poll meeting"
         >
-          <div className="m-card-heading">
-            <span className="m-icon-tile">
-              <Icon name="calendar" size={20} />
-            </span>
-            <div>
-              <h2 id="create-title">Create an availability poll</h2>
-              <p>Mulai dari rencana kecilmu.</p>
-            </div>
-            <span className="m-badge m-badge-neutral">NEW POLL</span>
-          </div>
           <form onSubmit={submit}>
             <div className="m-form-section">
-              <label className="m-label" htmlFor="poll-title">
-                <span className="m-step">1</span> What’s the occasion?
-              </label>
+              <label className="m-label" htmlFor="poll-title">Nama meeting</label>
               <input
                 id="poll-title"
                 className="m-input m-title-input"
-                placeholder="e.g. Product sync, coffee catch-up…"
+                placeholder="Misalnya, Review desain mingguan"
                 value={form.title}
                 onChange={(e) => field("title", e.target.value)}
                 required
@@ -252,11 +212,11 @@ export function CreatePoll() {
             </div>
             <div className="m-form-section">
               <div className="m-section-row">
-                <label className="m-label">
-                  <span className="m-step">2</span> Pick a few possible dates
-                </label>
+                <div className="m-label">
+                  Pilihan tanggal
+                </div>
                 <span className="m-small-muted">
-                  {form.dates.length}/14 selected
+                  {form.dates.length}/14 dipilih
                 </span>
               </div>
               <div className="m-date-picker">
@@ -288,7 +248,7 @@ export function CreatePoll() {
                   </div>
                 </div>
                 <div className="m-month-grid">
-                  {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+                  {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
                     <span className="m-weekday" key={d}>
                       {d}
                     </span>
@@ -347,12 +307,12 @@ export function CreatePoll() {
               </div>
             </div>
             <div className="m-form-section">
-              <label className="m-label">
-                <span className="m-step">3</span> Set the time window
-              </label>
+              <div className="m-label">
+                Jam dan durasi
+              </div>
               <div className="m-time-fields">
                 <label>
-                  From
+                  Mulai
                   <Select
                     tone="meeting"
                     aria-label="From"
@@ -365,7 +325,7 @@ export function CreatePoll() {
                 </label>
                 <span className="m-time-separator">—</span>
                 <label>
-                  To
+                  Sampai
                   <Select
                     tone="meeting"
                     aria-label="To"
@@ -377,7 +337,7 @@ export function CreatePoll() {
                   />
                 </label>
                 <label className="m-duration-field">
-                  Meeting duration
+                  Durasi meeting
                   <Select
                     tone="meeting"
                     aria-label="Meeting duration"
@@ -391,7 +351,7 @@ export function CreatePoll() {
               </div>
               <label className="m-zone-field">
                 <Icon name="globe" size={16} />
-                <span>Time zone</span>
+                <span>Zona waktu</span>
                 <Select
                   tone="meeting"
                   aria-label="Poll time zone"
@@ -424,7 +384,7 @@ export function CreatePoll() {
                     href={`/login?next=${encodeURIComponent(MEETING_PATH)}`}
                     onClick={rememberDraft}
                   >
-                    Sign in to create a poll <Icon name="arrow" size={17} />
+                    Masuk untuk membuat poll <Icon name="arrow" size={17} />
                   </Link>
                   <p>
                     Hanya penyelenggara perlu masuk. Peserta cukup buka link.
@@ -439,10 +399,10 @@ export function CreatePoll() {
                     aria-busy={busy}
                   >
                     {busy
-                      ? "Creating your poll…"
+                      ? "Membuat poll..."
                       : auth === "loading"
-                        ? "Connecting workspace…"
-                        : "Create poll & get a link"}
+                        ? "Menghubungkan..."
+                        : "Buat poll & dapatkan link"}
                     <Icon name="arrow" size={17} />
                   </button>
                   <p>
@@ -454,109 +414,6 @@ export function CreatePoll() {
             </div>
           </form>
         </section>
-
-        <aside className="m-create-aside">
-          <div className="m-preview-card">
-            <div className="m-section-row">
-              <span className="m-eyebrow">A GLIMPSE OF WHAT’S NEXT</span>
-              <Icon name="sparkle" size={19} />
-            </div>
-            <div className="m-preview-window">
-              <div className="m-preview-top">
-                <span />
-                <span />
-                <span />
-                <small>your shared availability</small>
-              </div>
-              <div className="m-preview-body">
-                <h3>{form.title || "A good time, for everyone."}</h3>
-                <p>
-                  {form.dates.length || "A few"} possible dates ·{" "}
-                  {form.duration} min together
-                </p>
-                <div className="m-mini-heatmap" aria-hidden="true">
-                  <div className="m-mini-labels">
-                    <span>09:00</span>
-                    <span>10:00</span>
-                    <span>11:00</span>
-                    <span>12:00</span>
-                    <span>13:00</span>
-                    <span>14:00</span>
-                  </div>
-                  {Array.from(
-                    { length: Math.min(form.dates.length || 5, 7) },
-                    (_, col) => (
-                      <div className="m-mini-day" key={col}>
-                        <span>
-                          {form.dates[col]
-                            ? dayLabel(form.dates[col], {
-                                month: undefined,
-                                weekday: "short",
-                              })
-                            : ["Mon", "Tue", "Wed", "Thu", "Fri"][col]}
-                        </span>
-                        {Array.from({ length: 12 }, (_, row) => (
-                          <i
-                            key={row}
-                            className={`m-heat-${col === 1 && row >= 2 && row <= 5 ? 5 : (row * 3 + col * 2 + Math.floor(row / 3)) % 5}`}
-                          />
-                        ))}
-                      </div>
-                    ),
-                  )}
-                </div>
-                <div className="m-mini-match">
-                  <span className="m-icon-tile">
-                    <Icon name="check" size={17} />
-                  </span>
-                  <div>
-                    <strong>Your best time, at a glance</strong>
-                    <p>Warna makin pekat, makin banyak yang bisa.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p className="m-preview-caption">
-              Ilustrasi heatmap. Jadwal asli muncul setelah peserta mengisi.
-            </p>
-          </div>
-          <div className="m-how-card">
-            <h3>
-              Less coordinating.
-              <br />
-              More connecting.
-            </h3>
-            {[
-              [
-                "link",
-                "One link brings everyone in",
-                "Bagikan ke grup, teman, atau timmu.",
-              ],
-              [
-                "grid",
-                "A few swipes say it all",
-                "Masing-masing tandai waktu luangnya.",
-              ],
-              [
-                "sparkle",
-                "The overlap does the talking",
-                "Pilih waktu dengan kecocokan terbaik.",
-              ],
-            ].map(([icon, title, text], i) => (
-              <div className="m-how-step" key={title}>
-                <span className="m-how-number">0{i + 1}</span>
-                <div>
-                  <strong>{title}</strong>
-                  <p>{text}</p>
-                </div>
-                <Icon name={icon} size={18} />
-              </div>
-            ))}
-            <Link href={`${MEETING_PATH}/demo`} className="m-text-link">
-              Take a look around the demo <Icon name="arrow" size={16} />
-            </Link>
-          </div>
-        </aside>
       </div>
 
       {listError && (
@@ -568,10 +425,10 @@ export function CreatePoll() {
         <section className="m-polls-section">
           <div className="m-section-row">
             <div>
-              <span className="m-eyebrow">YOUR WORKSPACE</span>
-              <h2>Recently planned</h2>
+              <span className="m-eyebrow">WORKSPACE</span>
+              <h2>Meeting kamu</h2>
             </div>
-            <span className="m-small-muted">{polls.length} polls</span>
+            <span className="m-small-muted">{polls.length} poll</span>
           </div>
           {polls.length ? (
             <div className="m-poll-list">
@@ -587,14 +444,14 @@ export function CreatePoll() {
                   <div>
                     <h3>{poll.title}</h3>
                     <p>
-                      {poll.dates.length} dates · {poll.duration} min ·{" "}
-                      {poll.participantCount} responses
+                      {poll.dates.length} tanggal · {poll.duration} menit ·{" "}
+                      {poll.participantCount} jawaban
                     </p>
                   </div>
                   <span
                     className={`m-badge ${poll.finalizedStart ? "m-badge-green" : "m-badge-neutral"}`}
                   >
-                    {poll.finalizedStart ? "Confirmed" : "Collecting"}
+                    {poll.finalizedStart ? "Dikonfirmasi" : "Menunggu jawaban"}
                   </span>
                   <Icon name="arrow" size={17} />
                 </Link>

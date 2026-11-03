@@ -74,7 +74,7 @@ export function PollScreen({ id }: { id: string }) {
   const [syncError, setSyncError] = useState("");
   const [owner, setOwner] = useState(isDemo);
   const [timezone, setTimezone] = useState("Asia/Jakarta");
-  const [mode, setMode] = useState<"group" | "mine">("group");
+  const [mode, setMode] = useState<"group" | "mine">("mine");
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [baseline, setBaseline] = useState<Participant | null>(null);
   const [name, setName] = useState("");
@@ -124,6 +124,7 @@ export function PollScreen({ id }: { id: string }) {
         setLoadError("");
         setSyncError("");
         if (first) {
+          if (data.finalizedStart) setMode("group");
           const saved = readIdentity(id),
             mine = data.participants.find((p) => p.id === saved?.id);
           setIdentity(saved);
@@ -203,7 +204,7 @@ export function PollScreen({ id }: { id: string }) {
   function startEditing() {
     setMode("mine");
     setNotice("");
-    setTimeout(() => nameInput.current?.focus(), 0);
+    setTimeout(() => nameInput.current?.focus({ preventScroll: true }), 0);
   }
   function restoreSaved() {
     if (savedRemote) {
@@ -297,7 +298,7 @@ export function PollScreen({ id }: { id: string }) {
       setMode("group");
       setNotice(
         isDemo
-          ? "Jawaban demo ditambahkan. Coba lihat bagaimana heatmap berubah."
+          ? "Jawaban demo disimpan. Jadwal bersama sudah diperbarui."
           : "Jawaban tersimpan. Kamu bisa kembali lewat link yang sama di browser ini.",
       );
     } catch (err) {
@@ -376,7 +377,7 @@ export function PollScreen({ id }: { id: string }) {
         <span className="m-icon-tile">
           <Icon name="calendar" size={26} />
         </span>
-        <h1>Making room for everyone…</h1>
+        <h1>Memuat jadwal...</h1>
         <p>Menyiapkan jadwal bersama.</p>
         <div className="m-skeleton-grid" aria-hidden="true" />
       </div>
@@ -387,7 +388,7 @@ export function PollScreen({ id }: { id: string }) {
         <span className="m-icon-tile">
           <Icon name="link" size={26} />
         </span>
-        <h1>We couldn’t find your plans.</h1>
+        <h1>Jadwal belum tersedia</h1>
         <p role="alert">{loadError}</p>
         <div className="m-inline-actions">
           <button
@@ -398,10 +399,10 @@ export function PollScreen({ id }: { id: string }) {
               setRetry((n) => n + 1);
             }}
           >
-            Try again <Icon name="refresh" size={16} />
+            Coba lagi <Icon name="refresh" size={16} />
           </button>
           <Link href={MEETING_PATH} className="m-button m-button-secondary">
-            Back to planning
+            Kembali
           </Link>
         </div>
       </div>
@@ -412,21 +413,19 @@ export function PollScreen({ id }: { id: string }) {
       {isDemo && (
         <div className="m-demo-banner">
           <span>
-            <Icon name="sparkle" size={17} />
-            <strong>A little test drive.</strong> Data contoh; perubahan hanya
-            berlaku selama sesi halaman ini.
+            <strong>Demo</strong> Data contoh. Perubahan hanya berlaku di halaman ini.
           </span>
           <Link href={MEETING_PATH}>
-            Create your own <Icon name="arrow" size={15} />
+            Buat poll <Icon name="arrow" size={15} />
           </Link>
         </div>
       )}
       <div className="m-breadcrumb">
         <Link href={MEETING_PATH}>
-          <Icon name="back" size={15} /> All polls
+          <Icon name="back" size={15} /> Semua meeting
         </Link>
         <span>/</span>
-        <span>Availability poll</span>
+        <span>Pilihan jadwal</span>
       </div>
       <section className="m-event-header">
         <div>
@@ -434,7 +433,7 @@ export function PollScreen({ id }: { id: string }) {
             className={`m-badge ${poll.finalizedStart ? "m-badge-green" : "m-badge-open"}`}
           >
             <span className="m-live-dot" />
-            {poll.finalizedStart ? "TIME CONFIRMED" : "FINDING OUR TIME"}
+            {poll.finalizedStart ? "Dikonfirmasi" : "Terbuka"}
           </span>
           <h1>{poll.title}</h1>
           {poll.description && (
@@ -450,11 +449,11 @@ export function PollScreen({ id }: { id: string }) {
             </span>
             <span>
               <Icon name="clock" size={16} />
-              {poll.duration} minutes
+              {poll.duration} menit
             </span>
             <span>
               <Icon name="users" size={16} />
-              {poll.participants.length} responses
+              {poll.participants.length} jawaban
             </span>
           </div>
         </div>
@@ -464,15 +463,15 @@ export function PollScreen({ id }: { id: string }) {
             type="button"
             onClick={share}
           >
-            <Icon name="link" size={16} /> Share poll
+            <Icon name="link" size={16} /> Bagikan
           </button>
-          {!poll.finalizedStart && (
+          {!poll.finalizedStart && mode !== "mine" && (
             <button
               className="m-button m-button-primary"
               type="button"
               onClick={startEditing}
             >
-              {baseline ? "Edit your availability" : "Add your availability"}
+              {baseline ? "Ubah jawaban" : "Isi waktu luang"}
               <Icon name="plus" size={17} />
             </button>
           )}
@@ -528,7 +527,7 @@ export function PollScreen({ id }: { id: string }) {
             <Icon name="check" size={26} />
           </span>
           <div>
-            <span className="m-eyebrow">IT’S A DATE</span>
+            <span className="m-eyebrow">Jadwal meeting</span>
             <h2>{slotLabel(poll.finalizedStart, timezone, poll.duration)}</h2>
             <p>
               {zoneLabel(poll.finalizedStart, timezone)} · Pengisian ditutup.
@@ -541,7 +540,7 @@ export function PollScreen({ id }: { id: string }) {
               type="button"
               onClick={() => calendarFile(poll)}
             >
-              <Icon name="download" size={16} /> Add to calendar
+              <Icon name="download" size={16} /> Unduh kalender
             </button>
             {owner && (
               <button
@@ -550,7 +549,7 @@ export function PollScreen({ id }: { id: string }) {
                 onClick={() => void finalize(null)}
                 disabled={busy}
               >
-                Reopen poll
+                Buka kembali
               </button>
             )}
           </div>
@@ -570,38 +569,33 @@ export function PollScreen({ id }: { id: string }) {
                 aria-pressed={mode === "group"}
                 onClick={() => setMode("group")}
               >
-                <Icon name="users" size={16} /> Group availability
+                <Icon name="users" size={16} /> Jadwal bersama
               </button>
               <button
                 type="button"
                 aria-pressed={mode === "mine"}
                 onClick={() => setMode("mine")}
               >
-                <Icon name="calendar" size={16} /> Your availability
+                <Icon name="calendar" size={16} /> Waktu saya
                 {dirty && <span className="m-unsaved-dot" />}
               </button>
             </div>
             <span className="m-live-label">
               <span className="m-live-dot" />
               {isDemo
-                ? "Interactive demo"
+                ? "Demo interaktif"
                 : online && !syncError
-                  ? "Updates every 20s"
-                  : "Updates paused"}
+                  ? "Diperbarui tiap 20 dtk"
+                  : "Pembaruan dijeda"}
             </span>
           </div>
           <div className="m-grid-toolbar">
             <div>
               <h2>
                 {mode === "group"
-                  ? "A little overlap. A lot of possibility."
-                  : "Make room for what matters."}
+                  ? "Jadwal bersama"
+                  : "Kapan kamu bisa?"}
               </h2>
-              <p>
-                {mode === "group"
-                  ? "Warna lebih pekat berarti lebih banyak yang tersedia."
-                  : "Klik atau sapu kotak untuk memilih. Di ponsel, ketuk setiap slot."}
-              </p>
             </div>
             <label className="m-display-zone">
               <Icon name="globe" size={15} />
@@ -620,15 +614,8 @@ export function PollScreen({ id }: { id: string }) {
           {mode === "mine" && (
             <div className="m-editor">
               <div className="m-editor-name">
-                <span className="m-avatar m-avatar-you">
-                  {name.trim() ? (
-                    initials(name)
-                  ) : (
-                    <Icon name="plus" size={16} />
-                  )}
-                </span>
                 <div>
-                  <label htmlFor="participant-name">Your name</label>
+                  <label htmlFor="participant-name">Nama kamu</label>
                   <input
                     id="participant-name"
                     ref={nameInput}
@@ -642,7 +629,6 @@ export function PollScreen({ id }: { id: string }) {
                     disabled={busy || !!poll.finalizedStart}
                   />
                 </div>
-                <span className="m-badge m-badge-neutral">YOU</span>
               </div>
               <div className="m-editor-tools">
                 <button
@@ -650,7 +636,7 @@ export function PollScreen({ id }: { id: string }) {
                   onClick={() => setDraft(new Set(poll.slots))}
                   disabled={busy || !!poll.finalizedStart}
                 >
-                  Select all
+                  Pilih semua tanggal
                 </button>
                 <span>·</span>
                 <button
@@ -658,7 +644,7 @@ export function PollScreen({ id }: { id: string }) {
                   onClick={() => setDraft(new Set())}
                   disabled={busy || !!poll.finalizedStart}
                 >
-                  Clear selection
+                  Kosongkan semua
                 </button>
               </div>
             </div>
@@ -667,13 +653,13 @@ export function PollScreen({ id }: { id: string }) {
             <div className="m-inline-warning" role="status">
               Jawabanmu diperbarui dari tab lain.{" "}
               <button type="button" onClick={restoreSaved}>
-                Load saved response
+                Muat jawaban tersimpan
               </button>
             </div>
           )}
           {mode === "group" && filter && (
             <div className="m-filter-notice">
-              Showing availability for{" "}
+              Jadwal{" "}
               <strong>
                 {poll.participants.find((p) => p.id === filter)?.name}
               </strong>
@@ -687,9 +673,6 @@ export function PollScreen({ id }: { id: string }) {
               </button>
             </div>
           )}
-          <p className="m-mobile-grid-hint">
-            Geser kalender untuk tanggal lainnya <Icon name="arrow" size={13} />
-          </p>
           <AvailabilityGrid
             poll={poll}
             timezone={timezone}
@@ -705,15 +688,15 @@ export function PollScreen({ id }: { id: string }) {
             {mode === "group" ? (
               <>
                 <span className="m-small-muted">
-                  All times in {timezone.split("/").pop()?.replaceAll("_", " ")}{" "}
-                  · 15-min slots
+                  Zona waktu: {timezone.split("/").pop()?.replaceAll("_", " ")}{" "}
+                  · interval 15 menit
                 </span>
                 <div className="m-legend">
-                  <span>Fewer</span>
+                  <span>Sedikit</span>
                   {[0, 1, 2, 3, 4, 5].map((n) => (
                     <i className={`m-heat-${n}`} key={n} />
                   ))}
-                  <span>More</span>
+                  <span>Banyak</span>
                 </div>
               </>
             ) : (
@@ -721,16 +704,16 @@ export function PollScreen({ id }: { id: string }) {
                 <div>
                   <strong>
                     {draft.size
-                      ? `${durationLabel(draft.size * 15)} selected`
-                      : "Your schedule is a blank canvas"}
+                      ? `${durationLabel(draft.size * 15)} dipilih`
+                      : "Belum ada jam dipilih"}
                   </strong>
                   <span>
                     {poll.finalizedStart
                       ? "Poll ditutup. Jawaban tidak bisa diubah."
                       : dirty
-                        ? "Unsaved changes · simpan jika sudah selesai"
+                        ? "Belum disimpan"
                         : baseline
-                          ? "Your saved availability"
+                          ? "Jawaban sudah tersimpan"
                           : "Tidak ada waktu yang cocok? Simpan tanpa memilih slot."}
                   </span>
                 </div>
@@ -747,16 +730,16 @@ export function PollScreen({ id }: { id: string }) {
                   aria-busy={busy}
                 >
                   {busy
-                    ? "Saving…"
+                    ? "Menyimpan..."
                     : baseline
-                      ? "Save changes"
-                      : "Save availability"}
+                      ? "Simpan perubahan"
+                      : "Simpan jawaban"}
                   <Icon name="check" size={16} />
                 </button>
               </>
             )}
           </div>
-          <div className="m-inspect-panel" aria-live="polite">
+          {mode === "group" && <div className="m-inspect-panel" aria-live="polite">
             {inspected ? (
               <>
                 <div>
@@ -764,7 +747,7 @@ export function PollScreen({ id }: { id: string }) {
                   <strong>{slotLabel(inspected, timezone)}</strong>
                   <span>
                     {inspectedPeople.length}/{poll.participants.length}{" "}
-                    available for this 15-min slot
+                    peserta bisa pada slot 15 menit ini
                   </span>
                 </div>
                 <p>
@@ -777,32 +760,20 @@ export function PollScreen({ id }: { id: string }) {
               <>
                 <Icon name="info" size={17} />
                 <p>
-                  Arahkan kursor atau gunakan tombol panah untuk melihat siapa
-                  yang tersedia.
+                  Ketuk jam untuk melihat peserta yang bisa hadir.
                 </p>
               </>
             )}
-          </div>
+          </div>}
         </section>
 
         <aside className="m-results-aside">
           <section className="m-card m-best-times">
-            <div className="m-section-row">
-              <span className="m-icon-tile m-icon-tile-lime">
-                <Icon name="sparkle" size={19} />
-              </span>
-              <span className="m-badge m-badge-neutral">
-                {poll.duration} MIN MEETING
-              </span>
-            </div>
-            <h2>Your best bets.</h2>
-            <p className="m-aside-description">
-              Waktu terbaik berdasarkan ketersediaan
-              <br className="m-desktop-break" /> sepanjang durasi meeting.
-            </p>
+            <h2>Waktu terbaik</h2>
+            <p className="m-aside-description">Cocok sepanjang {poll.duration} menit meeting.</p>
             {recommendations.length ? (
               <div className="m-recommendations">
-                {recommendations.map((rec, i) => {
+                {recommendations.map((rec) => {
                   const all = rec.count === poll.participants.length,
                     selected = focused === rec.start;
                   return (
@@ -827,7 +798,7 @@ export function PollScreen({ id }: { id: string }) {
                             month: undefined,
                           })}
                           <small>
-                            {new Intl.DateTimeFormat("en", {
+                            {new Intl.DateTimeFormat("id-ID", {
                               timeZone: timezone,
                               month: "short",
                             }).format(new Date(rec.start))}
@@ -854,15 +825,10 @@ export function PollScreen({ id }: { id: string }) {
                           <span className={all ? "m-rec-all" : "m-rec-some"}>
                             <Icon name={all ? "check" : "users"} size={12} />
                             {all
-                              ? "Everyone is available"
-                              : `${rec.count} of ${poll.participants.length} available`}
+                              ? "Semua peserta bisa"
+                              : `${rec.count}/${poll.participants.length} peserta bisa`}
                           </span>
                         </span>
-                        {i === 0 && (
-                          <span className="m-best-star">
-                            <Icon name="sparkle" size={14} />
-                          </span>
-                        )}
                       </button>
                       {selected && (
                         <div className="m-rec-detail">
@@ -881,7 +847,7 @@ export function PollScreen({ id }: { id: string }) {
                                 setConfirm(rec);
                               }}
                             >
-                              Confirm this time <Icon name="arrow" size={15} />
+                              Tetapkan jadwal <Icon name="arrow" size={15} />
                             </button>
                           )}
                         </div>
@@ -895,8 +861,8 @@ export function PollScreen({ id }: { id: string }) {
                 <Icon name="clock" size={25} />
                 <strong>
                   {poll.participants.length
-                    ? "Still looking for the overlap."
-                    : "Good times are on the way."}
+                    ? "Belum ada waktu yang cocok"
+                    : "Belum ada jawaban"}
                 </strong>
                 <p>
                   {poll.participants.length
@@ -915,7 +881,7 @@ export function PollScreen({ id }: { id: string }) {
 
           <section className="m-card m-participants">
             <div className="m-section-row">
-              <h2>The people, the plans.</h2>
+              <h2>Peserta</h2>
               <span className="m-count-bubble">{poll.participants.length}</span>
             </div>
             <p className="m-aside-description">
@@ -940,15 +906,12 @@ export function PollScreen({ id }: { id: string }) {
                   </span>
                   <span className="m-participant-name">
                     {person.name}
-                    {person.id === identity?.id && <small>You</small>}
+                    {person.id === identity?.id && <small>Kamu</small>}
                     <span>
                       {person.slots.length
-                        ? `${durationLabel(person.slots.length * 15)} available`
-                        : "No available times"}
+                        ? `${durationLabel(person.slots.length * 15)} tersedia`
+                        : "Tidak ada waktu yang cocok"}
                     </span>
-                  </span>
-                  <span className="m-participant-check">
-                    <Icon name="check" size={14} />
                   </span>
                 </button>
               ))}
@@ -962,7 +925,7 @@ export function PollScreen({ id }: { id: string }) {
                 <span className="m-avatar m-avatar-add">
                   <Icon name={baseline ? "calendar" : "plus"} size={17} />
                 </span>
-                {baseline ? "Edit your response" : "Add your availability"}
+                {baseline ? "Ubah jawaban" : "Isi waktu luang"}
               </button>
             )}
           </section>
@@ -974,11 +937,6 @@ export function PollScreen({ id }: { id: string }) {
             </p>
           </div>
         </aside>
-      </div>
-      <div className="m-bottom-note">
-        <Icon name="check" size={14} />
-        <span>Good plans leave room for everyone.</span>
-        <span>Times adapt to your time zone.</span>
       </div>
       {confirm && (
         <ConfirmTime

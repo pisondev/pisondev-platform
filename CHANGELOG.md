@@ -69,6 +69,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-11-03: Simplified Meeting creation and invitations with plain Indonesian labels,
+  quieter styling, a desktop results sidebar, and a single-column phone layout. All
+  dates and the active time range share one compact panel, with 16 labeled time
+  buttons and explicit range switching instead of a scrolling calendar. Guests start
+  in personal availability; selections survive date/range changes and support day
+  shortcuts, touch, keyboard, participant filters, and confirmation.
+
 - 2026-10-31: Cash Flow legend moved from below the chart to the top-right corner,
   stacked vertically under the All/Income/Outcome toggle, with its items left-aligned.
 - 2026-10-31: Finance tile icons are larger line icons without the white round badge.

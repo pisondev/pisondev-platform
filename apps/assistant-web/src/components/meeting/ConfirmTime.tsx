@@ -78,7 +78,7 @@ export function ConfirmTime({
             <Icon name="close" />
           </button>
         </div>
-        <h2 id="confirm-title">Make it a date?</h2>
+        <h2 id="confirm-title">Tetapkan jadwal ini?</h2>
         <p id="confirm-description">
           Jadwal ini akan dikonfirmasi dan pengisian jawaban ditutup. Kamu bisa
           membukanya kembali nanti.
@@ -87,7 +87,7 @@ export function ConfirmTime({
           <strong>{poll.title}</strong>
           <p>{slotLabel(recommendation.start, timezone, poll.duration)}</p>
           <span>
-            {zoneLabel(recommendation.start, timezone)} · {recommendation.count}
+            {zoneLabel(recommendation.start, timezone)} Â· {recommendation.count}
             /{poll.participants.length} peserta tersedia sepanjang meeting
           </span>
         </div>
@@ -109,7 +109,7 @@ export function ConfirmTime({
             onClick={onClose}
             disabled={busy}
           >
-            Keep exploring
+            Kembali
           </button>
           <button
             className="m-button m-button-primary"
@@ -118,7 +118,7 @@ export function ConfirmTime({
             disabled={busy}
             aria-busy={busy}
           >
-            {busy ? "Confirming…" : "Confirm this time"}
+            {busy ? "Confirmingâ€¦" : "Tetapkan jadwal"}
             <Icon name="check" size={16} />
           </button>
         </div>
