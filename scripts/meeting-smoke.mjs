@@ -33,6 +33,7 @@ async function context(options = {}) {
   ctx.on("page", (page) => {
     page.on("pageerror", (error) => errors.push(error.message));
     page.setDefaultTimeout(15000);
+    page.setDefaultNavigationTimeout(45000);
   });
   return ctx;
 }
@@ -75,19 +76,25 @@ async function edit(page) {
   await visible(page.getByLabel("Nama kamu", { exact: true }));
 }
 async function dragDateRanges(page, fromDay, fromRow, toDay, toRow) {
-  for (let day = fromDay; day <= toDay; day++) {
-    await page.locator(".m-day-options button").nth(day).click();
-    const from = page.locator(`button[data-row="${fromRow}"]`);
-    const to = page.locator(`button[data-row="${toRow}"]`);
-    await from.scrollIntoViewIfNeeded();
-    const a = await from.boundingBox(), b = await to.boundingBox();
-    assert.ok(a && b);
-    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
-    await page.mouse.up();
-  }
-  await page.locator(".m-day-options button").nth(fromDay).click();
+  const from = page.locator(`button[data-day="${fromDay}"][data-row="${fromRow}"]`);
+  const to = page.locator(`button[data-day="${toDay}"][data-row="${toRow}"]`);
+  await from.evaluate((cell) => cell.scrollIntoView({ block: "center", inline: "nearest" }));
+  const a = await from.boundingBox(), b = await to.boundingBox();
+  assert.ok(a && b);
+  assert.ok(a.y >= 0 && b.y + b.height <= page.viewportSize().height, "Drag endpoints must be visible");
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+  await page.mouse.up();
+}
+async function summaryBeforeCalendar(page) {
+  const positions = await page.evaluate(() => ({
+    summary: document.querySelector(".m-results-summary").getBoundingClientRect().bottom,
+    participants: document.querySelector(".m-participants").getBoundingClientRect().bottom,
+    board: document.querySelector(".m-board").getBoundingClientRect().top,
+  }));
+  assert.ok(positions.summary <= positions.board && positions.participants <= positions.board,
+    "Results and participants must appear above the calendar");
 }
 
 let pollId;
@@ -105,6 +112,7 @@ try {
       }),
     );
     await noOverflow(demo);
+    await summaryBeforeCalendar(demo);
     await screenshot(demo, `${width}-demo.png`);
     await demo.goto("/meeting/availability");
     await settled(demo);
@@ -130,22 +138,22 @@ try {
   await dragDateRanges(demo, 0, 0, 1, 3);
   assert.equal(
     await demo.locator(".m-slot-selected").count(),
-    4,
-    "Range drag selects four visible intervals on each date",
+    8,
+    "Rectangle drag selects two day columns and four vertical intervals",
   );
   const first = demo.locator('button[data-day="0"][data-row="0"]');
   await first.focus();
   await first.press("Space");
   assert.equal(
     await demo.locator(".m-slot-selected").count(),
-    3,
+    7,
     "Keyboard Space must toggle the slot",
   );
   await first.press("Space");
   await first.press("ArrowDown");
   assert.equal(
     await demo
-      .locator('button[data-day="0"][data-row="4"]')
+      .locator('button[data-day="0"][data-row="1"]')
       .evaluate((el) => el === document.activeElement),
     true,
   );
@@ -209,11 +217,9 @@ try {
   const renderedSlots = await dst.locator("button[data-slot]").evaluateAll((cells) =>
     cells.map((cell) => cell.dataset.slot),
   );
-  assert.deepEqual(renderedSlots, dstSlots.slice(0, 16), "Repeated DST hours must stay in chronological order");
+  assert.deepEqual(renderedSlots, dstSlots, "Repeated DST hours must stay in chronological order");
   assert.match(await dst.locator('button[data-slot="2026-11-01T05:00:00Z"]').getAttribute("aria-label"), /GMT-4/);
   assert.match(await dst.locator('button[data-slot="2026-11-01T06:00:00Z"]').getAttribute("aria-label"), /GMT-5/);
-  await dst.locator(".m-time-pages button").nth(1).click();
-  assert.deepEqual(await dst.locator("button[data-slot]").evaluateAll((cells) => cells.map((cell) => cell.dataset.slot)), dstSlots.slice(16));
   await dst.close();
   console.log("PASS: repeated DST hours stay chronological and expose distinct offsets");
 
@@ -227,42 +233,55 @@ try {
     id: "qa-compact", title: "Full schedule", description: "",
     timezone: "UTC", dates: compactSlots.filter((_, i) => i % 96 === 0).map((slot) => slot.slice(0, 10)),
     startHour: 0, endHour: 24, duration: 60, slots: compactSlots,
-    participants: [], recommendations: [], finalizedStart: null, createdAt: "2026-11-01T00:00:00Z",
+    participants: Array.from({ length: 7 }, (_, i) => ({ id: `compact-${i}`, name: `Guest ${i + 1}`, slots: [], version: 1 })),
+    recommendations: [], finalizedStart: null, createdAt: "2026-11-01T00:00:00Z",
   } } }));
   await compact.goto("/meeting/availability/qa-compact");
-  await visible(compact.locator(".m-day-options button").nth(13));
+  await visible(compact.locator(".m-availability-grid"));
+  assert.equal(await compact.locator(".m-participant").count(), 6);
+  await compact.getByRole("button", { name: "Lihat 1 peserta lainnya", exact: true }).click();
+  assert.equal(await compact.locator(".m-participant").count(), 7);
+  await compact.locator(".m-participant").last().click();
+  await visible(compact.locator(".m-filter-notice"));
+  await compact.getByRole("button", { name: "Clear participant filter", exact: true }).click();
+  await compact.getByRole("button", { name: "Tampilkan lebih sedikit", exact: true }).click();
+  assert.equal(await compact.locator(".m-participant").count(), 6);
+  await edit(compact);
   for (const width of [320, 390, 480, 768, 1024, 1440]) {
     await compact.setViewportSize({ width, height: 844 });
+    await compact.waitForFunction((expected) => document.querySelectorAll(".m-grid-day").length === expected, width <= 600 ? 3 : 7);
     await noOverflow(compact);
-    assert.equal(await compact.locator(".m-day-options button").count(), 14);
-    assert.equal(await compact.locator(".m-time-pages button").count(), 6);
-    assert.equal(await compact.locator("button[data-slot]").count(), 16);
+    await summaryBeforeCalendar(compact);
+    assert.equal(await compact.locator(".m-time-pages button").count(), 3);
+    assert.equal(await compact.locator("button[data-slot]").count(), (width <= 600 ? 3 : 7) * 32);
     const dimensions = await compact.locator(".m-picker").evaluate((el) => ({
       height: el.getBoundingClientRect().height,
       width: el.clientWidth, scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
     }));
-    assert.ok(dimensions.height < 650, `Picker too tall at ${width}px: ${dimensions.height}`);
+    assert.ok(dimensions.height < 760, `Picker too tall at ${width}px: ${dimensions.height}`);
     assert.ok(dimensions.scrollWidth <= dimensions.width + 1 && dimensions.scrollHeight <= dimensions.clientHeight + 1,
       `Picker requires scrolling at ${width}px`);
   }
-  await compact.locator('button[data-index="0"]').click();
-  const originalSlot = await compact.locator('button[data-index="0"]').getAttribute("data-slot");
-  await compact.locator(".m-time-pages button").nth(5).click();
-  await compact.locator('button[data-index="15"]').click();
-  await compact.locator(".m-day-options button").nth(13).click();
-  await compact.getByRole("button", { name: "Pilih semua jam hari ini" }).click();
-  await compact.locator(".m-day-options button").nth(0).click();
-  assert.equal(await compact.locator(`button[data-slot="${originalSlot}"]`).getAttribute("aria-pressed"), "true");
-  await compact.locator(".m-time-pages button").nth(5).click();
-  assert.equal(await compact.locator('button[data-index="15"]').getAttribute("aria-pressed"), "true");
-  await compact.locator(".m-day-options button").nth(13).click();
-  await visible(compact.getByRole("button", { name: "Kosongkan tanggal ini" }));
+  await dragDateRanges(compact, 0, 0, 0, 7);
+  assert.equal(await compact.locator(".m-slot-selected").count(), 8, "Vertical drag selects eight quarter hours");
+  await dragDateRanges(compact, 0, 0, 0, 3);
+  assert.equal(await compact.locator(".m-slot-selected").count(), 4, "Dragging selected slots erases the range");
+  await compact.locator(".m-time-pages button").nth(2).click();
+  await compact.locator('button[data-day="0"][data-row="95"]').click();
+  await compact.getByRole("button", { name: "Tanggal berikutnya", exact: true }).click();
+  await compact.locator("button.m-grid-day").last().click();
+  await compact.getByRole("button", { name: "Tanggal sebelumnya", exact: true }).click();
+  assert.equal(await compact.locator('button[data-day="0"][data-row="95"]').getAttribute("aria-pressed"), "true");
+  await compact.locator(".m-time-pages button").nth(0).click();
+  assert.equal(await compact.locator(".m-slot-selected").count(), 4);
+  await compact.getByRole("button", { name: "Tanggal berikutnya", exact: true }).click();
+  assert.equal(await compact.locator('button[data-day="13"][data-row="0"]').getAttribute("aria-pressed"), "true");
   await compact.getByRole("button", { name: "Kosongkan semua", exact: true }).click();
   assert.equal(await compact.locator(".m-slot-selected").count(), 0);
   await compact.setViewportSize({ width: 390, height: 844 });
   await screenshot(compact, "390-full-schedule.png");
   await compact.close();
-  console.log("PASS: 14 dates and 24-hour windows fit without nested scrolling; date/page changes preserve selections");
+  console.log("PASS: 14 dates and 24-hour windows fit without nested scrolling; date/time pages preserve selections and vertical drag selects/erases");
 
   const owner = await context();
   const config = await json(await owner.request.get("/api/v1/auth/config"));
@@ -336,12 +355,12 @@ try {
   );
   await guestPage.reload();
   await settled(guestPage);
-  await edit(guestPage, true);
+  await edit(guestPage);
   await chooseOption(guestPage, "Display time zone", "Jakarta \u00b7 WIB");
   assert.equal(
     await guestPage.locator(".m-slot-selected").count(),
-    4,
-    "Saved availability must survive reload on the first date",
+    8,
+    "Saved availability must survive reload across both date columns",
   );
   await guestPage
     .getByRole("button", { name: "Kosongkan semua", exact: true })
@@ -360,7 +379,7 @@ try {
     [],
     "Guests can explicitly submit no availability",
   );
-  await edit(guestPage, true);
+  await edit(guestPage);
   await dragDateRanges(guestPage, 0, 0, 0, 3);
   await guestPage
     .getByRole("button", { name: "Simpan perubahan", exact: true })
@@ -380,8 +399,27 @@ try {
   await edit(mobilePage);
   await chooseOption(mobilePage, "Display time zone", "Jakarta \u00b7 WIB");
   await mobilePage.getByLabel("Nama kamu", { exact: true }).fill("Raka Test");
-  for (let row = 0; row < 4; row++)
+  const touch = await mobile.newCDPSession(mobilePage);
+  async function touchRange(fromRow, toRow) {
+    const from = mobilePage.locator(`button[data-day="0"][data-row="${fromRow}"]`);
+    const to = mobilePage.locator(`button[data-day="0"][data-row="${toRow}"]`);
+    await from.evaluate((cell) => cell.scrollIntoView({ block: "center", inline: "nearest" }));
+    const a = await from.boundingBox(), b = await to.boundingBox();
+    const scrollBefore = await mobilePage.evaluate(() => window.scrollY);
+    const x = a.x + a.width / 2, start = a.y + a.height / 2, end = b.y + b.height / 2;
+    await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: start }] });
+    for (let step = 1; step <= 8; step++)
+      await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: start + (end - start) * step / 8 }] });
+    await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    assert.equal(await mobilePage.evaluate(() => window.scrollY), scrollBefore, "Touch selection must not scroll the page");
+  }
+  await touchRange(0, 3);
+  assert.equal(await mobilePage.locator(".m-slot-selected").count(), 4, "Touch drag selects a vertical time range");
+  await touchRange(0, 1);
+  assert.equal(await mobilePage.locator(".m-slot-selected").count(), 2, "Touch drag erases selected intervals");
+  for (let row = 0; row < 2; row++)
     await mobilePage.locator(`button[data-day="0"][data-row="${row}"]`).tap();
+  await touch.detach();
   assert.equal(
     await mobilePage.locator(".m-slot-selected").count(),
     4,
@@ -434,7 +472,7 @@ try {
     "Do not create an uneditable guest when key storage fails",
   );
   await blockedPage.close();
-  await edit(guestPage, true);
+  await edit(guestPage);
   await guestPage
     .getByLabel("Nama kamu", { exact: true })
     .fill("Offline draft");
@@ -463,8 +501,8 @@ try {
   const secondTab = await guest.newPage();
   await secondTab.goto(invitation);
   await settled(secondTab);
-  await edit(secondTab, true);
-  await edit(guestPage, true);
+  await edit(secondTab);
+  await edit(guestPage);
   await guestPage.getByLabel("Nama kamu", { exact: true }).fill("Ayu Updated");
   await guestPage
     .getByRole("button", { name: "Simpan perubahan", exact: true })

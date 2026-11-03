@@ -85,6 +85,7 @@ export function PollScreen({ id }: { id: string }) {
   const [hovered, setHovered] = useState("");
   const [focused, setFocused] = useState("");
   const [filter, setFilter] = useState("");
+  const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [confirm, setConfirm] = useState<Recommendation | null>(null);
   const [copyFallback, setCopyFallback] = useState("");
   const [retry, setRetry] = useState(0);
@@ -556,6 +557,182 @@ export function PollScreen({ id }: { id: string }) {
         </section>
       )}
 
+      <section className="m-results-summary" aria-labelledby="results-title">
+        <div className="m-summary-heading"><h2 id="results-title">Hasil sementara</h2><span>{poll.participants.length} peserta sudah mengisi</span></div>
+        <section className="m-best-times">
+          <h2>Waktu terbaik</h2>
+          <p className="m-aside-description">Cocok sepanjang {poll.duration} menit meeting.</p>
+          {recommendations.length ? (
+            <div className="m-recommendations">
+              {recommendations.map((rec) => {
+                const all = rec.count === poll.participants.length,
+                  selected = focused === rec.start;
+                return (
+                  <div
+                    key={rec.start}
+                    className={`m-recommendation ${selected ? "m-recommendation-selected" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      className="m-recommendation-main"
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setFocused(selected ? "" : rec.start);
+                        setHovered(rec.start);
+                        setMode("group");
+                        setFilter("");
+                      }}
+                    >
+                      <span className="m-rec-day">
+                        {dayLabel(dateKey(new Date(rec.start), timezone), {
+                          day: "2-digit",
+                          month: undefined,
+                        })}
+                        <small>
+                          {new Intl.DateTimeFormat("id-ID", {
+                            timeZone: timezone,
+                            month: "short",
+                          }).format(new Date(rec.start))}
+                        </small>
+                      </span>
+                      <span className="m-rec-info">
+                        <strong>
+                          {timeLabel(rec.start, timezone)} –{" "}
+                          {timeLabel(
+                            new Date(
+                              Date.parse(rec.start) + poll.duration * 60000,
+                            ).toISOString(),
+                            timezone,
+                          )}
+                        </strong>
+                        <span>
+                          {new Intl.DateTimeFormat("id-ID", {
+                            timeZone: timezone,
+                            weekday: "long",
+                            day: "numeric",
+                            month: "short",
+                          }).format(new Date(rec.start))}
+                        </span>
+                        <span className={all ? "m-rec-all" : "m-rec-some"}>
+                          <Icon name={all ? "check" : "users"} size={12} />
+                          {all
+                            ? "Semua peserta bisa"
+                            : `${rec.count}/${poll.participants.length} peserta bisa`}
+                        </span>
+                      </span>
+                    </button>
+                    {selected && (
+                      <div className="m-rec-detail">
+                        <p>
+                          {poll.participants
+                            .filter((p) => rec.participantIds.includes(p.id))
+                            .map((p) => p.name)
+                            .join(", ")}
+                        </p>
+                        {owner && !poll.finalizedStart && (
+                          <button
+                            type="button"
+                            className="m-button m-button-primary m-button-full"
+                            onClick={() => {
+                              setError("");
+                              setConfirm(rec);
+                            }}
+                          >
+                            Tetapkan jadwal <Icon name="arrow" size={15} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="m-empty-recommendations">
+              <Icon name="clock" size={25} />
+              <strong>
+                {poll.participants.length
+                  ? "Belum ada waktu yang cocok"
+                  : "Belum ada jawaban"}
+              </strong>
+              <p>
+                {poll.participants.length
+                  ? `Belum ada waktu utuh ${poll.duration} menit. Ajak peserta menambahkan pilihan.`
+                  : "Bagikan link dan isi waktu luangmu. Rekomendasi akan muncul di sini."}
+              </p>
+            </div>
+          )}
+          {!owner && !poll.finalizedStart && recommendations.length > 0 && (
+            <p className="m-rec-note">
+              <Icon name="info" size={14} /> Penyelenggara yang akan
+              mengonfirmasi waktunya.
+            </p>
+          )}
+        </section>
+
+        <section className="m-participants">
+          <div className="m-section-row">
+            <h2>Peserta</h2>
+            <span className="m-count-bubble">{poll.participants.length}</span>
+          </div>
+          <p className="m-aside-description">
+            {poll.participants.length
+              ? "Klik nama untuk menyorot jadwalnya."
+              : "Belum ada jawaban. Jadilah yang pertama."}
+          </p>
+          <div className="m-participant-list">
+            {poll.participants.slice(0, showAllParticipants ? undefined : 6).map((person) => (
+              <button
+                type="button"
+                key={person.id}
+                aria-pressed={filter === person.id}
+                onClick={() => {
+                  setFilter(filter === person.id ? "" : person.id);
+                  setMode("group");
+                }}
+                className={`m-participant ${filter === person.id ? "m-participant-active" : ""}`}
+              >
+                <span className="m-avatar">
+                  {initials(person.name)}
+                </span>
+                <span className="m-participant-name">
+                  {person.name}
+                  {person.id === identity?.id && <small>Kamu</small>}
+                  <span>
+                    {person.slots.length
+                      ? `${durationLabel(person.slots.length * 15)} tersedia`
+                      : "Tidak ada waktu yang cocok"}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          {poll.participants.length > 6 && <button type="button" className="m-participants-more"
+            aria-expanded={showAllParticipants} onClick={() => setShowAllParticipants((value) => !value)}>
+            {showAllParticipants ? "Tampilkan lebih sedikit" : `Lihat ${poll.participants.length - 6} peserta lainnya`}
+          </button>}
+          {!poll.finalizedStart && (
+            <button
+              className="m-add-response"
+              type="button"
+              onClick={startEditing}
+            >
+              <span className="m-avatar m-avatar-add">
+                <Icon name={baseline ? "calendar" : "plus"} size={17} />
+              </span>
+              {baseline ? "Ubah jawaban" : "Isi waktu luang"}
+            </button>
+          )}
+        </section>
+        <div className="m-privacy-note">
+          <Icon name="info" size={16} />
+          <p>
+            Semua pemilik link bisa melihat nama dan jadwal. Kunci edit
+            jawaban hanya disimpan di browser yang kamu gunakan.
+          </p>
+        </div>
+      </section>
+
       <div className="m-board-layout">
         <section className="m-card m-board" aria-label="Availability calendar">
           <div className="m-board-heading">
@@ -766,177 +943,6 @@ export function PollScreen({ id }: { id: string }) {
             )}
           </div>}
         </section>
-
-        <aside className="m-results-aside">
-          <section className="m-card m-best-times">
-            <h2>Waktu terbaik</h2>
-            <p className="m-aside-description">Cocok sepanjang {poll.duration} menit meeting.</p>
-            {recommendations.length ? (
-              <div className="m-recommendations">
-                {recommendations.map((rec) => {
-                  const all = rec.count === poll.participants.length,
-                    selected = focused === rec.start;
-                  return (
-                    <div
-                      key={rec.start}
-                      className={`m-recommendation ${selected ? "m-recommendation-selected" : ""}`}
-                    >
-                      <button
-                        type="button"
-                        className="m-recommendation-main"
-                        aria-pressed={selected}
-                        onClick={() => {
-                          setFocused(selected ? "" : rec.start);
-                          setHovered(rec.start);
-                          setMode("group");
-                          setFilter("");
-                        }}
-                      >
-                        <span className="m-rec-day">
-                          {dayLabel(dateKey(new Date(rec.start), timezone), {
-                            day: "2-digit",
-                            month: undefined,
-                          })}
-                          <small>
-                            {new Intl.DateTimeFormat("id-ID", {
-                              timeZone: timezone,
-                              month: "short",
-                            }).format(new Date(rec.start))}
-                          </small>
-                        </span>
-                        <span className="m-rec-info">
-                          <strong>
-                            {timeLabel(rec.start, timezone)} –{" "}
-                            {timeLabel(
-                              new Date(
-                                Date.parse(rec.start) + poll.duration * 60000,
-                              ).toISOString(),
-                              timezone,
-                            )}
-                          </strong>
-                          <span>
-                            {new Intl.DateTimeFormat("id-ID", {
-                              timeZone: timezone,
-                              weekday: "long",
-                              day: "numeric",
-                              month: "short",
-                            }).format(new Date(rec.start))}
-                          </span>
-                          <span className={all ? "m-rec-all" : "m-rec-some"}>
-                            <Icon name={all ? "check" : "users"} size={12} />
-                            {all
-                              ? "Semua peserta bisa"
-                              : `${rec.count}/${poll.participants.length} peserta bisa`}
-                          </span>
-                        </span>
-                      </button>
-                      {selected && (
-                        <div className="m-rec-detail">
-                          <p>
-                            {poll.participants
-                              .filter((p) => rec.participantIds.includes(p.id))
-                              .map((p) => p.name)
-                              .join(", ")}
-                          </p>
-                          {owner && !poll.finalizedStart && (
-                            <button
-                              type="button"
-                              className="m-button m-button-primary m-button-full"
-                              onClick={() => {
-                                setError("");
-                                setConfirm(rec);
-                              }}
-                            >
-                              Tetapkan jadwal <Icon name="arrow" size={15} />
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="m-empty-recommendations">
-                <Icon name="clock" size={25} />
-                <strong>
-                  {poll.participants.length
-                    ? "Belum ada waktu yang cocok"
-                    : "Belum ada jawaban"}
-                </strong>
-                <p>
-                  {poll.participants.length
-                    ? `Belum ada waktu utuh ${poll.duration} menit. Ajak peserta menambahkan pilihan.`
-                    : "Bagikan link dan isi waktu luangmu. Rekomendasi akan muncul di sini."}
-                </p>
-              </div>
-            )}
-            {!owner && !poll.finalizedStart && recommendations.length > 0 && (
-              <p className="m-rec-note">
-                <Icon name="info" size={14} /> Penyelenggara yang akan
-                mengonfirmasi waktunya.
-              </p>
-            )}
-          </section>
-
-          <section className="m-card m-participants">
-            <div className="m-section-row">
-              <h2>Peserta</h2>
-              <span className="m-count-bubble">{poll.participants.length}</span>
-            </div>
-            <p className="m-aside-description">
-              {poll.participants.length
-                ? "Klik nama untuk menyorot jadwalnya."
-                : "Belum ada jawaban. Jadilah yang pertama."}
-            </p>
-            <div className="m-participant-list">
-              {poll.participants.map((person, i) => (
-                <button
-                  type="button"
-                  key={person.id}
-                  aria-pressed={filter === person.id}
-                  onClick={() => {
-                    setFilter(filter === person.id ? "" : person.id);
-                    setMode("group");
-                  }}
-                  className={`m-participant ${filter === person.id ? "m-participant-active" : ""}`}
-                >
-                  <span className={`m-avatar m-avatar-${i % 5}`}>
-                    {initials(person.name)}
-                  </span>
-                  <span className="m-participant-name">
-                    {person.name}
-                    {person.id === identity?.id && <small>Kamu</small>}
-                    <span>
-                      {person.slots.length
-                        ? `${durationLabel(person.slots.length * 15)} tersedia`
-                        : "Tidak ada waktu yang cocok"}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-            {!poll.finalizedStart && (
-              <button
-                className="m-add-response"
-                type="button"
-                onClick={startEditing}
-              >
-                <span className="m-avatar m-avatar-add">
-                  <Icon name={baseline ? "calendar" : "plus"} size={17} />
-                </span>
-                {baseline ? "Ubah jawaban" : "Isi waktu luang"}
-              </button>
-            )}
-          </section>
-          <div className="m-privacy-note">
-            <Icon name="info" size={16} />
-            <p>
-              Semua pemilik link bisa melihat nama dan jadwal. Kunci edit
-              jawaban hanya disimpan di browser yang kamu gunakan.
-            </p>
-          </div>
-        </aside>
       </div>
       {confirm && (
         <ConfirmTime

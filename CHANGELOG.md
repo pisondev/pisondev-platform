@@ -69,6 +69,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- 2026-11-03: Meeting interim results and participants now appear above the calendar.
+  Availability uses one vertical 15-minute column per day, with mouse, pen, and touch
+  drag selection/erasing. Seven desktop columns or three phone columns and explicit
+  date/time pages keep the matrix compact without internal scrolling. Day headers
+  select entire days; saved-response summaries and draft editing remain separate.
+
 - 2026-11-03: Simplified Meeting creation and invitations with plain Indonesian labels,
   quieter styling, a desktop results sidebar, and a single-column phone layout. All
   dates and the active time range share one compact panel, with 16 labeled time

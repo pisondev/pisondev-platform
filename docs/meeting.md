@@ -133,24 +133,30 @@ create events in a connected account.
 ## Interface and accessibility
 
 The UI was simplified on 3 Nov 2026: neutral surfaces, restrained green actions,
-plain Indonesian labels, and a compact creation form. Desktop places the calendar
-beside time settings and poll results beside availability; phones use one column.
-Decorative previews, slogans, synthetic avatars, and redundant cards were removed.
+plain Indonesian labels, and a compact creation form. Creation places the month
+calendar beside time settings on desktop and stacks them on phones. Invitations show
+interim recommendations and participants above availability on every screen size.
+The summary reflects saved responses; unsaved personal selections remain drafts.
+Participant names filter the group heatmap. More than six names use an explicit
+show-more control instead of an internal scrollbar.
 
-Invitations open directly in personal availability. One panel shows every date in a
-wrapping grid and up to sixteen labeled 15-minute buttons for the active date. Longer
-windows use explicit time-range buttons, up to six groups for a 24-hour day. There is
-no horizontal or vertical scrolling inside the date/time picker. The surrounding page
-scrolls normally on small devices. Dates with selections have a dot; drafts persist
-across date, time-range, view, and zone changes. A day-level shortcut selects or clears
-all times on that date, including other time ranges. Global shortcuts are explicit.
+Invitations open directly in personal availability. Each day has one compact vertical
+column of 15-minute cells, in the same matrix format as When2meet. Desktop shows up
+to seven columns and phones show up to three, with previous/next date controls.
+Up to 32 time rows (eight hours) appear together. Longer windows use explicit range
+buttons, including three pages for a 24-hour day. The date/time picker has no internal
+scroll region; the surrounding page scrolls normally. Drafts persist across date,
+time-range, view, and zone changes. Clicking a day header selects or clears all its
+times, including other time pages. Global shortcuts explicitly apply to every date.
 
-Mouse/pen users paint contiguous intervals within the visible date and time range;
-touch users tap buttons. Four-column time navigation uses arrows, Home/End, and
-Space/Enter, with one tab stop for the visible time choices. Group buttons expose
-actual participant counts and named inspection; selecting a recommendation opens
-its date and time range directly. Repeated DST times retain their offset labels.
-All choices are drafts until Save. Closed polls disable editing.
+Mouse, pen, and touch can paint vertically or across day columns. Starting on a selected
+cell erases the range. Touch selection prevents page scrolling only on editable cells;
+page scrolling remains available in the margins and controls. Arrow keys follow the
+matrix (up/down for time, left/right for days); Home/End move within a column, and
+Space/Enter toggles a cell. Visible time cells use one tab stop. Group cells expose
+actual counts and named inspection. Recommendations open their date and time page.
+Repeated DST hours stay chronological with distinct offsets in accessible labels.
+All choices remain drafts until Save. Closed polls disable editing.
 
 The native modal supports Escape, focus restoration, scroll lock, and disabled dismissal
 while saving. Feedback uses live regions. Motion respects reduced-motion preferences.
