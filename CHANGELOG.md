@@ -110,6 +110,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- 2026-11-09: The quota page no longer crashes when there are no expenses: the API now
+  returns `expenses: []` instead of `null`.
+
 - 2026-10-31: Cash flow axis dots: the single gray dot that sat 2 units left of the y-axis
   is replaced by one dot per point on each axis, centered on the axis lines. Savings and
   Subscription axis dots are centered on their axes too.

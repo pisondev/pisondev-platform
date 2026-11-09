@@ -263,7 +263,7 @@ func ComputeQuota(s Snapshot, r Rules, now time.Time) Quota {
 	}
 	q.Period = Period{Start: weekStart.Format(dateLayout), End: end.Format(dateLayout)}
 
-	var expenses []ExpenseItem
+	expenses := []ExpenseItem{} // never null in JSON, the quota page expects a list
 	for _, t := range s.Transactions {
 		if !countsTowardQuota(t, r) || !t.Date.Valid() {
 			continue

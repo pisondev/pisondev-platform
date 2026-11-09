@@ -1,6 +1,8 @@
 package finance
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -169,6 +171,17 @@ func TestPeriodExtendsUntilNextAllowance(t *testing.T) {
 	q := ComputeQuota(snapshotOct1(), testRules, at("2026-10-06T10:00"))
 	if q.Period != (Period{Start: "2026-09-29", End: "2026-10-06"}) {
 		t.Errorf("Period = %+v, want 29 Sep to today", q.Period)
+	}
+}
+
+func TestQuotaWithoutExpensesListsNone(t *testing.T) {
+	q := ComputeQuota(Snapshot{}, testRules, at("2026-11-09T09:00"))
+	b, err := json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"expenses":[]`) {
+		t.Errorf("expenses should be an empty list, got %s", b)
 	}
 }
 
