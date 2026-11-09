@@ -50,6 +50,24 @@ bill is paid.
 - Target = total of the current subscription roster; the chart shows the gap.
 - Weeks still to come before the deadline are listed as estimates.
 
+## Bill cycles and moving money to savings
+
+A bill cycle runs from the day after a month's last subscription bill (a Langganan
+expense) to the next month's last bill; the first starts at the opening balance. For each
+cycle the cash flow gives Net (income − spending), Saved, the Balance at its end, and
+**Can save = Balance − Rp50.000** (the minimum balance stays). Using the balance rather
+than the net carries the opening balance and anything not moved earlier into the next
+cycle, so moving all of it starts the next cycle from Rp50.000, and moving half is fine.
+
+A move to a savings account is a Keluar (Lainnya) whose Notes contain
+`dipindah ke tabungan`. It lowers the balance but is neither spending nor outcome: it is
+left out of the quota and counted as Saved. The phrase `dikecualikan dari kuota` goes with
+it so the sheet's quota skips it too. The sheet's Weekly Recap Spent still counts it,
+since that formula sums every Keluar.
+
+Save now (the "Pindah ke Tabungan" template) = the last closed cycle's Can save, less
+what was moved since, and never more than today's balance − Rp50.000.
+
 ## Subscription roster (`langganan`)
 
 1. Target month: month of the earliest `Next Billing` among active subscriptions.
