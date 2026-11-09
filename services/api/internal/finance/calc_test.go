@@ -334,34 +334,45 @@ func TestCashflowBillingCycles(t *testing.T) {
 	}
 }
 
-// Money moved to savings leaves the balance but is neither spending nor outcome, and
-// SaveNow offers what the last closed cycle left above the minimum balance.
+// Each closed bill cycle could save its own surplus (the first also its opening balance
+// above the minimum), so cycles add up; moves to savings fill the oldest cycle first and
+// are neither spending nor outcome. The running cycle has no figures.
 func TestCashflowSavings(t *testing.T) {
 	s := Snapshot{Transactions: []Transaction{
-		tx("2026-09-20T15:07", "Opening balance", TypeOpening, "", 100000, ""),
+		tx("2026-09-20T15:07", "Opening balance", TypeOpening, "", 153471, ""),
 		tx("2026-09-22", "Allowance", TypeIncome, "", 400000, ""),
-		tx("2026-09-29", "Bill", TypeExpense, CategorySubscription, 50000, ""),
-		tx("2026-09-30", "Pindah ke tabungan", TypeExpense, "Lainnya", 100000, "Sisihkan siklus, dipindah ke tabungan, dikecualikan dari kuota"),
-		tx("2026-10-01", "Snack", TypeExpense, "Makan", 20000, ""),
+		tx("2026-09-29", "Bill", TypeExpense, CategorySubscription, 410000, ""),
+		tx("2026-09-30", "Allowance", TypeIncome, "", 500000, ""),
+		tx("2026-10-27", "Bill", TypeExpense, CategorySubscription, 200000, ""),
+		tx("2026-10-28", "Pindah ke tabungan", TypeExpense, "Lainnya", 150000, "Sisihkan, dipindah ke tabungan, dikecualikan dari kuota"),
+		tx("2026-11-01", "Snack", TypeExpense, "Makan", 20000, ""),
 	}}
-	cf := ComputeCashflow(s, testRules, "billing", at("2026-10-02T09:00"))
-	if len(cf.Points) != 2 {
+	cf := ComputeCashflow(s, testRules, "billing", at("2026-11-02T09:00"))
+	if len(cf.Points) != 3 {
 		t.Fatalf("points = %+v", cf.Points)
 	}
-	first, now := cf.Points[0], cf.Points[1]
-	// Closed cycle: balance 100.000 + 400.000 - 50.000 = 450.000; can save 400.000.
-	if first.Balance != Rupiah(450000) || first.CanSave != Rupiah(400000) || first.Saved != 0 {
-		t.Errorf("closed cycle = %+v", first)
+	sep, oct, now := cf.Points[0], cf.Points[1], cf.Points[2]
+	// Sep: opening 153.471 - 50.000 + (400.000 - 410.000) = 93.471, all moved by the
+	// first 150.000; Oct: 300.000, of which 56.529 moved.
+	check := func(name string, p CashflowPoint, could, saved, left int64) {
+		t.Helper()
+		if p.CouldSave == nil || *p.CouldSave != Rupiah(could) || *p.SavedFor != Rupiah(saved) || *p.Left != Rupiah(left) {
+			t.Errorf("%s = could %v saved %v left %v", name, p.CouldSave, p.SavedFor, p.Left)
+		}
 	}
-	if now.Saved != Rupiah(100000) || now.Outcome != Rupiah(20000) || now.Balance != Rupiah(330000) {
+	check("Sep", sep, 93471, 93471, 0)
+	check("Oct", oct, 300000, 56529, 243471)
+	if !now.Running || now.CouldSave != nil || now.Saved != Rupiah(150000) || now.Outcome != Rupiah(20000) {
 		t.Errorf("running cycle = %+v", now)
 	}
-	// 400.000 left after the cycle, 100.000 moved since: 300.000, and the balance allows
-	// 330.000 - 50.000 = 280.000.
-	if cf.SaveNow != Rupiah(280000) {
-		t.Errorf("SaveNow = %s, want 280000", cf.SaveNow)
+	if cf.Unsaved != Rupiah(243471) {
+		t.Errorf("Unsaved = %s, want 243471", cf.Unsaved)
 	}
-	q := ComputeQuota(s, testRules, at("2026-10-02T09:00"))
+	// Balance today: 153.471 + 900.000 - 610.000 - 150.000 - 20.000 = 273.471.
+	if cf.Available != Rupiah(223471) {
+		t.Errorf("Available = %s, want 223471", cf.Available)
+	}
+	q := ComputeQuota(s, testRules, at("2026-11-02T09:00"))
 	for _, e := range q.Expenses {
 		if e.Name == "Pindah ke tabungan" {
 			t.Error("a move to savings counts as spending")

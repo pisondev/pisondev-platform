@@ -16,15 +16,23 @@ type CashflowPoint struct {
 	Net     Money  `json:"net"`     // Income - Outcome
 	Saved   Money  `json:"saved"`   // moved to savings in this period
 	Balance Money  `json:"balance"` // tracked account at the end of the period
-	CanSave Money  `json:"canSave"` // Balance above the minimum balance
+
+	// Bill cycles only. A closed cycle could save its own surplus (the first one also its
+	// opening balance above the minimum), so the cycles add up. Moves to savings fill the
+	// oldest closed cycle with room left first. The running cycle has no figures yet.
+	Running   bool   `json:"running,omitempty"`
+	CouldSave *Money `json:"couldSave,omitempty"`
+	SavedFor  *Money `json:"savedFor,omitempty"`
+	Left      *Money `json:"left,omitempty"`
 }
 
 type Cashflow struct {
 	Granularity string          `json:"granularity"` // monthly, weekly or billing
 	Points      []CashflowPoint `json:"points"`
-	// SaveNow, for billing: what the last closed cycle left to move to savings, less what
-	// was moved since and never more than the balance above the minimum today.
-	SaveNow Money `json:"saveNow"`
+	// Bill cycles only: what closed cycles have left to move in all, and how much today's
+	// balance allows to move without going under the minimum.
+	Unsaved   Money `json:"unsaved"`
+	Available Money `json:"available"`
 }
 
 // ComputeCashflow totals income and expenses of the tracked account per calendar month,
@@ -101,11 +109,11 @@ func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cas
 		}
 		p.Net = p.Income - p.Outcome
 		p.Balance = balanceBefore(s.Transactions, r, b.to)
-		p.CanSave = max(0, p.Balance-r.MinBalance)
 		cf.Points = append(cf.Points, p)
 	}
 	if cf.Granularity == "billing" {
-		cf.SaveNow = saveNow(cf.Points, s.Transactions, r)
+		cf.Unsaved = allocateSavings(cf.Points, s.Transactions, r)
+		cf.Available = max(0, Balance(s.Transactions, r)-r.MinBalance)
 	}
 	return cf
 }
@@ -127,27 +135,65 @@ func balanceBefore(txs []Transaction, r Rules, to time.Time) Money {
 	return b
 }
 
-func saveNow(points []CashflowPoint, txs []Transaction, r Rules) Money {
-	var closed *CashflowPoint
-	for i := range points {
-		if points[i].Label != "Now" {
-			closed = &points[i]
-		}
-	}
-	if closed == nil {
-		return 0
-	}
-	end, err := time.ParseInLocation(dateLayout, closed.End, clock.WIB)
-	if err != nil {
-		return 0
-	}
-	left := closed.CanSave
+// allocateSavings fills in the bill cycle figures and returns what closed cycles have
+// left in all (never below zero).
+func allocateSavings(points []CashflowPoint, txs []Transaction, r Rules) Money {
+	var opening Money
 	for _, t := range txs {
-		if t.Account == r.Account && isSaving(t) && t.Date.Valid() && t.Date.Day().After(end) {
-			left -= t.AmountValue()
+		if t.Type == TypeOpening && t.Account == r.Account {
+			opening += t.AmountValue()
 		}
 	}
-	return max(0, min(left, Balance(txs, r)-r.MinBalance))
+	var closed []int
+	for i := range points {
+		if points[i].Label == "Now" {
+			points[i].Running = true
+			continue
+		}
+		could := points[i].Net
+		if len(closed) == 0 {
+			could += opening - r.MinBalance
+		}
+		points[i].CouldSave, points[i].SavedFor = ptr(could), ptr(Money(0))
+		closed = append(closed, i)
+	}
+	if len(closed) == 0 {
+		return 0
+	}
+
+	moves := []Transaction{}
+	for _, t := range txs {
+		if t.Account == r.Account && isSaving(t) && t.Date.Valid() {
+			moves = append(moves, t)
+		}
+	}
+	sort.SliceStable(moves, func(i, j int) bool { return moves[i].Date.Before(moves[j].Date) })
+	for _, m := range moves {
+		day := m.Date.Day().Format(dateLayout)
+		amount := m.AmountValue()
+		last := -1
+		for _, i := range closed {
+			if points[i].Start > day {
+				break
+			}
+			last = i
+			if room := *points[i].CouldSave - *points[i].SavedFor; room > 0 && amount > 0 {
+				take := min(room, amount)
+				*points[i].SavedFor += take
+				amount -= take
+			}
+		}
+		if amount > 0 && last >= 0 { // more than the cycles had: the latest one takes it
+			*points[last].SavedFor += amount
+		}
+	}
+
+	var unsaved Money
+	for _, i := range closed {
+		points[i].Left = ptr(*points[i].CouldSave - *points[i].SavedFor)
+		unsaved += *points[i].Left
+	}
+	return max(0, unsaved)
 }
 
 // billingCutoffs returns, per month, the day of the last subscription bill on the
