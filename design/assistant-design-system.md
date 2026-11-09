@@ -266,6 +266,8 @@ circular add button `max(34px, 68s)`; move them to `Button` when they are next c
 - Cells truncate with ellipses. Some descriptions have native `title` hints; these do
   not provide a reliable touch or keyboard detail view.
 - `rowKey` must remain stable. `rowStyle` colors subscriptions; cell classes color signs.
+- `onRowClick` turns rows into buttons named by `rowLabel` ("Edit Spotify"); transaction
+  and subscription tables use it to open their edit sheets.
 - The implementation uses `div`/`span`, without native table semantics.
 - `action` places one control at the right end of the header, vertically centered and
   outside the grid, so the header height does not change. Keep the last label short.
@@ -280,7 +282,7 @@ arrow nudges 1.5 px on fine-pointer hover. It opens in the same tab; the detail 
 `PageHeader` back link returns. Carry the current view in the query string when the
 detail page can start from it (Finance passes `group` and `kind`).
 
-Example subscription widths are `86:180:228:320`; expense widths are `86:170:228:330`.
+Example subscription widths are `70:150:300:300` (room for sen); expense widths are `86:170:228:330`.
 Preserve the component's header/row geometry when adding columns or loading placeholders.
 Do not make a static row look clickable. A row with a future detail action needs an
 explicit accessible link/button and visible focus.
@@ -355,10 +357,18 @@ checkbox. Save uses a green-to-gold gradient, bold white text, and twice Cancel'
 share. Busy disables Save and changes its label to `Saving...`; other dismissal paths
 remain available today. Duplicate detection has an explicit save-again action.
 
-Initial focus, Escape close, backdrop close, and a named modal dialog are implemented.
-Focus trapping, background inertness, scroll locking, focus restoration, field-error
-associations, and dismissal behavior during an outstanding save still need work. New
-sheets should use one corrected shared primitive rather than copying those gaps.
+Every sheet is built from `components/Sheet.tsx`: `useSheet` (initial focus, Escape and
+backdrop close, focus trap, inert background, scroll lock, focus return, no dismissal
+while a save runs, exit animation) and `SheetFrame`, `SheetActions`, `Field`, `Check`,
+`FieldError`, `SheetError`. `DeleteButton` asks once more in place ("Confirm") instead of
+a browser dialog. Field-error associations (`aria-describedby`) still need work.
+
+The transaction sheet also edits (`editing`): no templates, Delete beside Cancel, and the
+"paid back" checkbox writes the exclusion phrase into Notes so the change stays visible.
+A subscription template adds "Paid the <date> bill", checked by default, which moves that
+subscription's Next Billing on with the save. The subscription sheet adds, edits,
+pauses or stops a subscription and offers "Mark as paid", which opens the transaction
+sheet on that bill.
 
 ## 8. Data, copy, and state contracts
 

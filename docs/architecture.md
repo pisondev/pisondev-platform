@@ -42,9 +42,11 @@ Finance routes:
 | `GET /finance/summary` | Balance of the tracked account |
 | `GET /finance/cashflow?granularity=monthly\|weekly` | Income, outcome and net per period |
 | `GET /finance/transactions?kind=all\|income\|outcome&limit=` | Newest first |
-| `POST /finance/transactions` | Add; `weeklyAllowance: true` also starts a Weekly Recap week |
+| `GET /finance/transactions/:id` | One transaction, for the edit form |
+| `POST /finance/transactions` | Add; `weeklyAllowance: true` also starts a Weekly Recap week; `paysSubscription` + `paysFrom` also shift that subscription's Next Billing in the same database transaction |
 | `PATCH /finance/transactions/:id`, `DELETE /finance/transactions/:id` | Edit, delete |
-| `GET /finance/subscriptions` | Monthly and yearly groups, current roster |
+| `GET /finance/subscriptions` | Monthly and yearly groups, paused or stopped ones, current roster |
+| `POST /finance/subscriptions`, `PATCH /finance/subscriptions/:id` | Add, edit (`name`, `price`, `cycle`, `status`, `nextBilling`, `notes`; Billing Day follows Next Billing) |
 | `POST /finance/subscriptions/:id/advance` | Shift Next Billing one cycle; `from` makes it idempotent |
 | `GET /finance/quota` | Weekly quota, recent expenses, savings |
 | `GET /finance/options` | Select options read from Notion |

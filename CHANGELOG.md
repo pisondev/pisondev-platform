@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Manage finance from the web app instead of Notion. Subscriptions: add with
+  the + button, tap a row to edit price, cycle, Next Billing, status (paused and stopped
+  ones get their own list) or notes, and "Mark as paid" to record the bill and move Next
+  Billing on in one save. A subscription template in the transaction sheet does the same
+  through a "Paid the <date> bill" checkbox. Transactions: tap a row in Recent Expenses,
+  the Finance table or Cash Flow to edit or delete it. Changes reach Notion within
+  seconds. API: `POST`/`PATCH /finance/subscriptions`, `GET /finance/transactions/:id`,
+  and `paysSubscription` on `POST /finance/transactions`. Sheets now share one primitive
+  (`components/Sheet.tsx`).
+
 - 2026-11-09: Amounts with sen, for bank bills such as Rp416.551,65. The API counts money
   in sen (`finance.Money`), money columns are `numeric(16,2)` (migration 00004), and Notion
   decimals are no longer rounded on sync. The app shows sen only when there are any, and

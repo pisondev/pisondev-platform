@@ -32,8 +32,7 @@ Status as of 31 Oct 2026.
 
 - Shared loading skeletons and accessible custom dropdowns, following the
   [motion spec](../design/assistant-motion.md).
-- Finance UI for what the API already supports: edit and delete transactions, mark a
-  subscription paid (shift Next Billing), sync status page.
+- Sync status page in the Finance UI.
 - Optional separate `meeting.pisondev.com` host with an origin and sign-in plan. Broader
   Meeting automation remains future work (rules in the automation folder's Meeting Assistant).
 - Public site `pisondev.com` as `apps/web`.
