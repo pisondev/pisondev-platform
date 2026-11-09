@@ -91,7 +91,10 @@ them passing or update them on purpose.
 
 - **Design units**: one Tailwind spacing unit is one pixel of the 1080 px Figma frame, so
   `px-85` or `w-910` read straight from Figma. Text sizes have readable minimums.
-- **Money**: whole rupiah as `int64`; display with `rupiah()` in `src/lib/format.ts`.
+- **Money**: `finance.Money`, rupiah counted in sen (`int64`, 1/100), so bank amounts like
+  Rp416.551,65 stay exact; `numeric(16,2)` in Postgres, plain rupiah (`416551.65`) in JSON
+  and Notion. Never compare a `Money` with a bare literal: `Rupiah(65000)`, not `65000`.
+  Display with `rupiah()` in `src/lib/format.ts`.
 - **Dates**: `finance.LocalDate`, WIB wall clock, canonical `YYYY-MM-DD` or
   `YYYY-MM-DDTHH:mm`, with 00:00 collapsing to the date (same as the sheet).
 - **Sheet-computed fields**: Weekly Recap `Week`, `Income`, `Spent` come from Notion and

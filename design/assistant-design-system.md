@@ -30,7 +30,7 @@ Preserve these characteristics when adding pages:
 - Forest-to-gold title text, quiet gray surfaces, and restrained green/red status colors.
 - A clear hierarchy: page header, summary, grouped content, detail, action.
 - Flat nested surfaces and small rounded corners; charts carry most of the color.
-- Plain English interface copy, whole rupiah, and WIB dates where relevant.
+- Plain English interface copy, rupiah (sen only when there are any), and WIB dates where relevant.
 
 A wide sidebar, sans-serif dashboard, saturated page background, large card shadows,
 and a different header on each route would change this language. Treat such changes as
@@ -338,7 +338,9 @@ Fields use small muted labels, body-size inputs, card backgrounds, line borders,
 Category and Account use the shared `Select`; the date-time picker is native. Date is labeled WIB and initialized
 with `nowWIB()`. Amount uses `AmountInput`: thousand dots are display only and regroup as
 digits change; the caret skips them and deleting a dot deletes the digit beside it. A
-pasted `Rp` is dropped, and a trailing `rb` or `k` multiplies by 1000.
+comma starts up to two sen digits (a typed `.`, the decimal key on many phones, becomes
+one; on blur sen are padded to two). A pasted `Rp` is dropped, a pasted `416551.65` reads
+as sen, and a trailing `rb` or `k` multiplies by 1000 (`2,5rb` is 2.500).
 Client native validation and API field errors both exist.
 
 A Templates row sits above the fields and scrolls sideways: small cards (card background,
@@ -360,7 +362,8 @@ sheets should use one corrected shared primitive rather than copying those gaps.
 
 ## 8. Data, copy, and state contracts
 
-Use `rupiah()` for whole rupiah (`Rp25.000`, `-Rp25.000`, `-` for missing amounts) and
+Use `rupiah()` for amounts (`Rp25.000`, `-Rp25.000`, `Rp416.551,65` with two sen digits
+only when there are sen, `-` for missing amounts) and
 `signedRupiah()` for signed transaction/savings values (`+Rp25.000`). Use `shortDate()`
 and `dateRange()` for the existing English month labels. Distinguish missing, zero,
 negative, estimated, and failed values; never turn a failed request into a believable zero.

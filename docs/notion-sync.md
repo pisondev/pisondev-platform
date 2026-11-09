@@ -49,6 +49,10 @@ Each row stores `sync_base`: its field values at the last sync. Per field:
   `Week` title when the web app creates a week;
 - a row without base takes Notion's values.
 
+Field values are compared as canonical text. Amounts keep their sen (`416551.65`, no
+trailing zeros), the same text a Notion number gives, so a decimal amount does not look
+changed on every run. Numbers past two decimals are rounded to the sen.
+
 Rows and pages:
 
 | Situation | Result |

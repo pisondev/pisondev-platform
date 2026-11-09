@@ -22,7 +22,7 @@ Opening balance (`Saldo Awal`) + income (`Masuk`) − expenses (`Keluar`), track
 | Weeks to deadline | (deadline − week start) ÷ 7, rounded down, at least 1 |
 | Deposits expected | weeks − 1 |
 | Free funds | balance + deposits × allowance − subscriptions due − minimum balance |
-| Max per week | free funds ÷ weeks, rounded down to thousands |
+| Max per week | free funds ÷ weeks, rounded down to whole thousands of rupiah |
 | Spent | expenses on the tracked account since week start, without category `Langganan` and without the exclusion phrase in Notes |
 | Remaining | max − spent |
 

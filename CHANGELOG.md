@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Amounts with sen, for bank bills such as Rp416.551,65. The API counts money
+  in sen (`finance.Money`), money columns are `numeric(16,2)` (migration 00004), and Notion
+  decimals are no longer rounded on sync. The app shows sen only when there are any, and
+  the Amount field takes a comma (or the phone's `.` key) with up to two sen digits;
+  `2,5rb` gives 2.500.
+
 - 2026-11-09: A template for every active subscription in the New transaction sheet,
   soonest bill first, after the allowance. It fills Expense, Langganan, Mandiri Debit, the
   price, "Tagihan <name>" (names starting with "Paket" stay as they are) and the billing
