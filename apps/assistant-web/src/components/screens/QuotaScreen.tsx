@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { dateRange, rupiah, shortDate, signedRupiah } from "@/lib/format";
-import type { ExpenseItem, Options, Quota, SavingsRow } from "@/lib/types";
+import type { ExpenseItem, Options, Quota, SavingsRow, Subscriptions } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { AddTransactionSheet } from "../AddTransactionSheet";
 import { SavingsChart } from "../Charts";
@@ -13,6 +13,7 @@ import { Card, Figure, Note, PageHeader, Panel } from "../ui";
 export function QuotaScreen() {
   const quota = useApi<Quota>("/finance/quota");
   const options = useApi<Options>("/finance/options");
+  const subs = useApi<Subscriptions>("/finance/subscriptions");
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState<string>();
   const q = quota.data;
@@ -112,6 +113,7 @@ export function QuotaScreen() {
           onClose={close}
           options={options.data}
           weeklyAllowance={q?.breakdown.weeklyAllowance}
+          subscriptions={subs.data ? [...subs.data.monthly.items, ...subs.data.yearly.items] : undefined}
           onSaved={(t) => {
             setAdding(false);
             setSaved(`Saved: ${t.name}, ${rupiah(t.amount)}. It reaches Notion and the sheet within a minute.`);

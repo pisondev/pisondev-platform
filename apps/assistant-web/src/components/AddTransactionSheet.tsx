@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
-import { nowWIB, rupiah } from "@/lib/format";
-import type { Options, Transaction } from "@/lib/types";
+import { nowWIB, rupiah, shortDate } from "@/lib/format";
+import type { Options, SubItem, Transaction } from "@/lib/types";
 import { AmountInput, formatAmount } from "./AmountInput";
 import { Select } from "./Select";
 import { Toggle } from "./ui";
@@ -30,10 +30,39 @@ type Template = {
   notes: string;
   category?: string;
   allowance?: boolean;
+  date?: string; // YYYY-MM-DDTHH:mm, now when absent
 };
 
+// The API takes dates from 60 days ago up to tomorrow.
+const DAY = 86_400_000;
+function inRange(day: string, today: string): boolean {
+  const diff = (Date.parse(day) - Date.parse(today)) / DAY;
+  return diff >= -60 && diff <= 0;
+}
+
+/** A subscription bill: on its billing day at 10:00, or today at 10:00 before it is due. */
+function subscriptionTemplate(s: SubItem, today: string): Template {
+  const due = s.nextBilling?.slice(0, 10);
+  return {
+    id: `sub-${s.id}`,
+    title: s.name,
+    kind: "Keluar",
+    name: /^paket\b/i.test(s.name) ? s.name : `Tagihan ${s.name}`,
+    amount: s.price,
+    account: "Mandiri Debit",
+    category: "Langganan",
+    notes: `Tagihan ${s.cycle === "Tahunan" ? "tahunan" : "bulanan"}.`,
+    date: `${due && inRange(due, today) ? due : today}T10:00`,
+  };
+}
+
 // Names and notes follow the rows already in Notion, so the sheet groups them the same way.
-function templates(weeklyAllowance: number): Template[] {
+// Subscriptions follow the allowance, soonest bill first.
+function templates(weeklyAllowance: number, subscriptions: SubItem[]): Template[] {
+  const today = nowWIB().slice(0, 10);
+  const bills = [...subscriptions]
+    .sort((a, b) => (a.nextBilling ?? "9999").localeCompare(b.nextBilling ?? "9999"))
+    .map((s) => subscriptionTemplate(s, today));
   return [
     {
       id: "allowance",
@@ -45,6 +74,7 @@ function templates(weeklyAllowance: number): Template[] {
       notes: "Sangu rutin.",
       allowance: true,
     },
+    ...bills,
   ];
 }
 
@@ -54,11 +84,13 @@ export function AddTransactionSheet({
   onSaved,
   options,
   weeklyAllowance = 250000,
+  subscriptions = [],
 }: {
   onClose: () => void;
   onSaved: (t: Transaction) => void;
   options: Options | undefined;
   weeklyAllowance?: number;
+  subscriptions?: SubItem[];
 }) {
   const [kind, setKind] = useState<Kind>("Keluar");
   const [name, setName] = useState("");
@@ -144,7 +176,7 @@ export function AddTransactionSheet({
     setAmount(formatAmount(String(t.amount)));
     if (t.category) setCategory(t.category);
     setAccount(t.account);
-    setDate(nowWIB());
+    setDate(t.date ?? nowWIB());
     setNotes(t.notes);
     setExcluded(false);
     setAllowance(t.allowance ?? false);
@@ -234,20 +266,21 @@ export function AddTransactionSheet({
 
         <div role="group" aria-label="Templates" className="mt-32 grid gap-8">
           <span className="text-small text-muted">Templates</span>
-          <div className="flex flex-wrap gap-16">
-            {templates(weeklyAllowance).map((t) => (
+          <div className="scroll-thin -mx-4 flex gap-16 overflow-x-auto px-4 pt-4 pb-12">
+            {templates(weeklyAllowance, subscriptions).map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => apply(t)}
                 aria-pressed={template === t.id}
-                className={`grid gap-4 rounded-card border bg-card px-24 py-16 text-left transition-colors ${
+                className={`grid shrink-0 gap-4 rounded-card border bg-card px-24 py-16 text-left transition-colors ${
                   template === t.id ? "border-green ring-2 ring-green/20" : "border-line hover:border-green"
                 }`}
               >
                 <span className="text-small font-bold text-ink">{t.title}</span>
                 <span className={`text-small ${t.kind === "Masuk" ? "text-green" : "text-maroon"}`}>
                   {t.kind === "Masuk" ? "Income" : "Expense"} · {rupiah(t.amount)}
+                  {t.date ? ` · ${shortDate(t.date)}` : ""}
                 </span>
               </button>
             ))}
