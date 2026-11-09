@@ -60,6 +60,10 @@ bill is paid.
 Shifting a bill (`advance`) moves `Next Billing` to the billing day of the next month, or
 next year for yearly ones. A billing day missing from a month falls on its last day.
 
+A subscription whose Notes contain `harga bisa berubah` gets a `*` after its amount and a
+reminder on the Subscriptions page that the price may change at the next renewal. It is
+display only; the rules keep using `Price`. Remove the phrase once the new price is in.
+
 ## Reference values
 
 Unit tests rebuild the 1 Oct 2026 state and expect: balance 470.877, subscriptions due

@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Subscriptions page: a subscription whose Notes contain `harga bisa berubah`
+  shows `*` after its amount and a reminder that the price may change at the next renewal.
+  Subscriptions can keep a fixed colour by name; pisondev.com (Hostinger domain, added in
+  Notion, Rp181.165 yearly, next renewal 20 Oct 2027) is blue-black.
+
 - 2026-11-09: The Amount field in the New transaction sheet groups thousands with dots as
   you type. The dots are display only: they come and go with the digits, the caret skips
   them, and Backspace or Delete on a dot removes the digit next to it. `25rb` and `25k`
