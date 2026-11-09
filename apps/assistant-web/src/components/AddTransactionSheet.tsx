@@ -6,7 +6,7 @@ import { nowWIB, rupiah, rupiahDigits, shortDate } from "@/lib/format";
 import type { Options, SubItem, Transaction } from "@/lib/types";
 import { AmountInput, formatAmount, parseAmount } from "./AmountInput";
 import { Select } from "./Select";
-import { Check, DeleteButton, Field, FieldError, SheetActions, SheetError, SheetFrame, inputClass, useSheet } from "./Sheet";
+import { Check, DeleteButton, Field, FieldError, SheetActions, SheetError, SheetFrame, SheetReadActions, inputClass, useSheet } from "./Sheet";
 import { Toggle } from "./ui";
 import { SenText } from "./SenText";
 
@@ -129,7 +129,20 @@ export function AddTransactionSheet({
   const [template, setTemplate] = useState<string>();
   const first = useRef<HTMLInputElement>(null);
   const amountInput = useRef<HTMLInputElement>(null);
-  const { formRef, savingRef, mountedRef, dismissingRef, closing, close, finish } = useSheet(onClose, payFor ? amountInput : first);
+  // An existing transaction opens read-only; Edit unlocks it, so a stray tap changes nothing.
+  const [locked, setLocked] = useState(!!editing);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const { formRef, savingRef, mountedRef, dismissingRef, closing, close, finish } = useSheet(
+    onClose,
+    payFor ? amountInput : editing ? editButton : first,
+  );
+  const unlock = () => setLocked(false);
+  // Edit disappears as the fields unlock, so focus moves on to the first field.
+  const wasLocked = useRef(locked);
+  useEffect(() => {
+    if (wasLocked.current && !locked) first.current?.focus();
+    wasLocked.current = locked;
+  }, [locked]);
   const titleId = useId();
   const list = templates(weeklyAllowance, subscriptions);
   const excludedNow = editing ? notes.toLowerCase().includes(EXCLUDE_MARKER) : excluded;
@@ -179,6 +192,7 @@ export function AddTransactionSheet({
 
   function submit(e: FormEvent | null, allowDuplicate = false) {
     e?.preventDefault();
+    if (locked) return;
     const fields = {
       type: kind,
       name,
@@ -228,18 +242,20 @@ export function AddTransactionSheet({
       closing={closing}
       onDismiss={close}
       titleId={titleId}
-      title={editing ? "Edit transaction" : "New transaction"}
+      title={editing ? (locked ? "Transaction" : "Edit transaction") : "New transaction"}
       busy={busy}
       onSubmit={submit}
       aside={
-        <Toggle<Kind>
-          options={[
-            { value: "Keluar", label: "Expense" },
-            { value: "Masuk", label: "Income" },
-          ]}
-          value={kind}
-          onChange={setKind}
-        />
+        <fieldset disabled={locked} className="contents">
+          <Toggle<Kind>
+            options={[
+              { value: "Keluar", label: "Expense" },
+              { value: "Masuk", label: "Income" },
+            ]}
+            value={kind}
+            onChange={setKind}
+          />
+        </fieldset>
       }
     >
       {editing ? null : (
@@ -267,7 +283,7 @@ export function AddTransactionSheet({
         </div>
       )}
 
-      <div className="mt-32 grid gap-28 text-body">
+      <fieldset disabled={locked} className="mt-32 grid min-w-0 gap-28 text-body">
         <Field label="Name">
           <input ref={first} required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Roti O" className={inputClass} />
           <FieldError fields={error?.fields} name="name" />
@@ -278,12 +294,12 @@ export function AddTransactionSheet({
         </Field>
         {kind === "Keluar" ? (
           <Field label="Category" animated>
-            <Select aria-label="Category" value={category} onChange={setCategory} options={categories.map((c) => ({ value: c, label: c }))} className={inputClass} />
+            <Select aria-label="Category" disabled={locked} value={category} onChange={setCategory} options={categories.map((c) => ({ value: c, label: c }))} className={inputClass} />
             <FieldError fields={error?.fields} name="category" />
           </Field>
         ) : null}
         <Field label="Account">
-          <Select aria-label="Account" value={account} onChange={setAccount} options={accounts.map((a) => ({ value: a, label: a }))} className={inputClass} />
+          <Select aria-label="Account" disabled={locked} value={account} onChange={setAccount} options={accounts.map((a) => ({ value: a, label: a }))} className={inputClass} />
           <FieldError fields={error?.fields} name="account" />
         </Field>
         <Field label="Date (WIB)">
@@ -309,7 +325,7 @@ export function AddTransactionSheet({
           </Check>
         ) : null}
         <FieldError fields={error?.fields} name="paysSubscription" />
-      </div>
+      </fieldset>
 
       {error ? (
         <SheetError message={error.message}>
@@ -321,7 +337,11 @@ export function AddTransactionSheet({
         </SheetError>
       ) : null}
 
-      <SheetActions closing={closing} onCancel={close} busy={busy} disabled={!options} extra={editing ? <DeleteButton busy={busy} onDelete={remove} /> : undefined} />
+      {locked ? (
+        <SheetReadActions onClose={close} onEdit={unlock} editRef={editButton} />
+      ) : (
+        <SheetActions closing={closing} onCancel={close} busy={busy} disabled={!options} extra={editing ? <DeleteButton busy={busy} onDelete={remove} /> : undefined} />
+      )}
     </SheetFrame>
   );
 }

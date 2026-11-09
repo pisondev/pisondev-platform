@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ApiError, patch, post } from "@/lib/api";
 import { nowWIB, rupiahDigits, shortDate } from "@/lib/format";
 import type { SubItem } from "@/lib/types";
 import { AmountInput, formatAmount, parseAmount } from "./AmountInput";
 import { Select } from "./Select";
-import { Check, Field, FieldError, SheetActions, SheetError, SheetFrame, inputClass, useSheet } from "./Sheet";
+import { Check, Field, FieldError, SheetActions, SheetError, SheetFrame, SheetReadActions, inputClass, useSheet } from "./Sheet";
 import { Toggle } from "./ui";
 
 type Cycle = "Bulanan" | "Tahunan";
@@ -51,11 +51,22 @@ export function SubscriptionSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; fields?: Record<string, unknown> }>();
   const first = useRef<HTMLInputElement>(null);
-  const { formRef, savingRef, mountedRef, dismissingRef, closing, close, finish } = useSheet(onClose, first);
+  // An existing subscription opens read-only; Edit unlocks it. Mark as paid works either way.
+  const [locked, setLocked] = useState(!!editing);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const { formRef, savingRef, mountedRef, dismissingRef, closing, close, finish } = useSheet(onClose, editing ? editButton : first);
+  const unlock = () => setLocked(false);
+  // Edit disappears as the fields unlock, so focus moves on to the first field.
+  const wasLocked = useRef(locked);
+  useEffect(() => {
+    if (wasLocked.current && !locked) first.current?.focus();
+    wasLocked.current = locked;
+  }, [locked]);
   const titleId = useId();
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (locked) return;
     if (savingRef.current || dismissingRef.current) return;
     const all = { name: name.trim(), price: parseAmount(price), cycle, nextBilling, status, notes: notes.trim() };
     // An edit sends only what changed, so a field edited in Notion meanwhile is kept.
@@ -92,18 +103,20 @@ export function SubscriptionSheet({
       closing={closing}
       onDismiss={close}
       titleId={titleId}
-      title={editing ? "Edit subscription" : "New subscription"}
+      title={editing ? (locked ? editing.name : "Edit subscription") : "New subscription"}
       busy={busy}
       onSubmit={submit}
       aside={
-        <Toggle<Cycle>
-          options={[
-            { value: "Bulanan", label: "Monthly" },
-            { value: "Tahunan", label: "Yearly" },
-          ]}
-          value={cycle}
-          onChange={setCycle}
-        />
+        <fieldset disabled={locked} className="contents">
+          <Toggle<Cycle>
+            options={[
+              { value: "Bulanan", label: "Monthly" },
+              { value: "Tahunan", label: "Yearly" },
+            ]}
+            value={cycle}
+            onChange={setCycle}
+          />
+        </fieldset>
       }
     >
       {canPay ? (
@@ -119,7 +132,7 @@ export function SubscriptionSheet({
         </button>
       ) : null}
 
-      <div className="mt-32 grid gap-28 text-body">
+      <fieldset disabled={locked} className="mt-32 grid min-w-0 gap-28 text-body">
         <Field label="Name">
           <input ref={first} required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Spotify" className={inputClass} />
           <FieldError fields={error?.fields} name="name" />
@@ -133,7 +146,7 @@ export function SubscriptionSheet({
           <FieldError fields={error?.fields} name="nextBilling" />
         </Field>
         <Field label="Status">
-          <Select aria-label="Status" value={status} onChange={setStatus} options={STATUSES} className={inputClass} />
+          <Select aria-label="Status" disabled={locked} value={status} onChange={setStatus} options={STATUSES} className={inputClass} />
           <FieldError fields={error?.fields} name="status" />
         </Field>
         <Field label="Notes">
@@ -143,11 +156,11 @@ export function SubscriptionSheet({
         <Check checked={notes.toLowerCase().includes(PRICE_MAY_CHANGE)} onChange={(on) => setNotes(withPriceNote(notes, on))}>
           The price may change at the next renewal (shows a reminder)
         </Check>
-      </div>
+      </fieldset>
 
       {error ? <SheetError message={error.message} /> : null}
 
-      <SheetActions closing={closing} onCancel={close} busy={busy} />
+      {locked ? <SheetReadActions onClose={close} onEdit={unlock} editRef={editButton} /> : <SheetActions closing={closing} onCancel={close} busy={busy} />}
     </SheetFrame>
   );
 }

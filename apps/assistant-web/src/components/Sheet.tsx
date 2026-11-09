@@ -159,6 +159,28 @@ export function SheetActions({ closing, onCancel, busy, disabled, extra }: {
 }
 
 /**
+ * Actions of a sheet opened on an existing record: it starts read-only, so a stray tap
+ * changes nothing, and Edit unlocks the fields.
+ */
+export function SheetReadActions({ onClose, onEdit, editRef }: { onClose: () => void; onEdit: () => void; editRef?: RefObject<HTMLButtonElement | null> }) {
+  return (
+    <div className="mt-40 flex gap-24">
+      <button type="button" onClick={onClose} className="flex-1 rounded-card bg-panel py-24 text-body text-muted">
+        Close
+      </button>
+      <button
+        ref={editRef}
+        type="button"
+        onClick={onEdit}
+        className="flex-[2] rounded-card border border-green bg-card py-24 text-body font-bold text-green hover:bg-panel"
+      >
+        Edit
+      </button>
+    </div>
+  );
+}
+
+/**
  * Delete that asks once more in place (no browser dialog): the first press arms it, the
  * second within a few seconds deletes.
  */
@@ -191,7 +213,7 @@ export function SheetError({ message, children }: { message: string; children?: 
 }
 
 export const inputClass =
-  "w-full rounded-card border border-line bg-card px-24 py-16 text-body text-ink outline-none focus:border-green focus:ring-2 focus:ring-green/20";
+  "w-full rounded-card border border-line bg-card px-24 py-16 text-body text-ink outline-none focus:border-green focus:ring-2 focus:ring-green/20 disabled:cursor-default disabled:border-transparent disabled:bg-panel disabled:text-ink disabled:opacity-100";
 
 export function Field({ label, children, animated = false }: { label: string; children: ReactNode; animated?: boolean }) {
   return (
