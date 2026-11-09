@@ -111,6 +111,7 @@ export function QuotaScreen() {
         <AddTransactionSheet
           onClose={close}
           options={options.data}
+          weeklyAllowance={q?.breakdown.weeklyAllowance}
           onSaved={(t) => {
             setAdding(false);
             setSaved(`Saved: ${t.name}, ${rupiah(t.amount)}. It reaches Notion and the sheet within a minute.`);

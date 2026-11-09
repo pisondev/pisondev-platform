@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
-import { nowWIB } from "@/lib/format";
+import { nowWIB, rupiah } from "@/lib/format";
 import type { Options, Transaction } from "@/lib/types";
 import { Select } from "./Select";
 import { Toggle } from "./ui";
@@ -21,15 +21,46 @@ function parseAmount(raw: string): number {
   return Number(s.replace(/[.,\s]/g, "")) || 0;
 }
 
+/** A routine transaction that fills the form; nothing is saved until Save. */
+type Template = {
+  id: string;
+  title: string;
+  kind: Kind;
+  name: string;
+  amount: number;
+  account: string;
+  notes: string;
+  category?: string;
+  allowance?: boolean;
+};
+
+// Names and notes follow the rows already in Notion, so the sheet groups them the same way.
+function templates(weeklyAllowance: number): Template[] {
+  return [
+    {
+      id: "allowance",
+      title: "Uang Saku Mingguan",
+      kind: "Masuk",
+      name: "Uang saku mingguan",
+      amount: weeklyAllowance,
+      account: "Mandiri Debit",
+      notes: "Sangu rutin.",
+      allowance: true,
+    },
+  ];
+}
+
 /** Mounted only while open, so every opening starts from a fresh form. */
 export function AddTransactionSheet({
   onClose,
   onSaved,
   options,
+  weeklyAllowance = 250000,
 }: {
   onClose: () => void;
   onSaved: (t: Transaction) => void;
   options: Options | undefined;
+  weeklyAllowance?: number;
 }) {
   const [kind, setKind] = useState<Kind>("Keluar");
   const [name, setName] = useState("");
@@ -42,7 +73,9 @@ export function AddTransactionSheet({
   const [allowance, setAllowance] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; fields?: Record<string, unknown>; duplicate?: boolean }>();
+  const [template, setTemplate] = useState<string>();
   const first = useRef<HTMLInputElement>(null);
+  const amountInput = useRef<HTMLInputElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const saving = useRef(false);
   const mounted = useRef(false);
@@ -106,6 +139,22 @@ export function AddTransactionSheet({
     preference.addEventListener("change", finish);
     return () => preference.removeEventListener("change", finish);
   }, [onClose]);
+
+  function apply(t: Template) {
+    setKind(t.kind);
+    setName(t.name);
+    setAmount(t.amount ? rupiah(t.amount).replace(/^Rp/, "") : "");
+    if (t.category) setCategory(t.category);
+    setAccount(t.account);
+    setDate(nowWIB());
+    setNotes(t.notes);
+    setExcluded(false);
+    setAllowance(t.allowance ?? false);
+    setError(undefined);
+    setTemplate(t.id);
+    amountInput.current?.focus();
+    amountInput.current?.select();
+  }
 
   async function submit(e: FormEvent | null, allowDuplicate = false) {
     e?.preventDefault();
@@ -185,13 +234,35 @@ export function AddTransactionSheet({
           />
         </div>
 
+        <div role="group" aria-label="Templates" className="mt-32 grid gap-8">
+          <span className="text-small text-muted">Templates</span>
+          <div className="flex flex-wrap gap-16">
+            {templates(weeklyAllowance).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => apply(t)}
+                aria-pressed={template === t.id}
+                className={`grid gap-4 rounded-card border bg-card px-24 py-16 text-left transition-colors ${
+                  template === t.id ? "border-green ring-2 ring-green/20" : "border-line hover:border-green"
+                }`}
+              >
+                <span className="text-small font-bold text-ink">{t.title}</span>
+                <span className={`text-small ${t.kind === "Masuk" ? "text-green" : "text-maroon"}`}>
+                  {t.kind === "Masuk" ? "Income" : "Expense"} · {rupiah(t.amount)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-32 grid gap-28 text-body">
           <Field label="Name">
             <input ref={first} required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Roti O" className={input} />
             {fieldError("name")}
           </Field>
           <Field label="Amount">
-            <input required inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="25.000 or 25rb" className={input} />
+            <input ref={amountInput} required inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="25.000 or 25rb" className={input} />
             {fieldError("amount")}
           </Field>
           {kind === "Keluar" ? (
