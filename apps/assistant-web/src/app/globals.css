@@ -138,11 +138,16 @@ body {
 
 /* Navigation tiles (NavTile): tinted gradient from the sky/mint tokens, a hairline edge, and
    a soft glow with a thin ring tucked into the bottom-right corner behind the content. */
-/* Sen after the whole rupiah: smaller and raised, without changing the line height. */
+/* Sen after the whole rupiah: smaller and lifted to the top of the line box. Aligning to
+   the top keeps it inside the line, so truncating cells never clip it and it never reaches
+   into the element above. Tailwind's preflight raises every <sup> by 0.5em with
+   position: relative; that is undone here. */
 .sen {
+  position: static;
+  display: inline-block;
   font-size: 0.7em;
-  line-height: 0;
-  vertical-align: 0.5em;
+  line-height: 1;
+  vertical-align: top;
   margin-left: 0.03em;
 }
 
