@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: The Amount field in the New transaction sheet groups thousands with dots as
+  you type. The dots are display only: they come and go with the digits, the caret skips
+  them, and Backspace or Delete on a dot removes the digit next to it. `25rb` and `25k`
+  still become 25.000.
+
 - 2026-11-09: Templates in the New transaction sheet, starting with "Uang Saku
   Mingguan". A template only fills the form (Income, "Uang saku mingguan", the weekly
   allowance amount, Mandiri Debit, now, "Sangu rutin.", weekly allowance checked) and

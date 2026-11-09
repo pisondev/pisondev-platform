@@ -336,7 +336,9 @@ capped at 480 px wide and 92 dynamic viewport height, and scrolls internally. In
 Fields use small muted labels, body-size inputs, card backgrounds, line borders,
 `px-24 py-16`, green focus borders, and a green 20% focus ring. Textareas do not resize.
 Category and Account use the shared `Select`; the date-time picker is native. Date is labeled WIB and initialized
-with `nowWIB()`. Amount accepts digits, dot grouping, `Rp`, and `rb`/`k` shorthand.
+with `nowWIB()`. Amount uses `AmountInput`: thousand dots are display only and regroup as
+digits change; the caret skips them and deleting a dot deletes the digit beside it. A
+pasted `Rp` is dropped, and a trailing `rb` or `k` multiplies by 1000.
 Client native validation and API field errors both exist.
 
 A Templates row sits above the fields: small cards (card background, line border, bold
