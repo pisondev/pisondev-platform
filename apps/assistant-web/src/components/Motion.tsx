@@ -27,7 +27,8 @@ export function AnimatedMoney({ value }: { value: number }) {
       const time = performance.now();
       const step = (now: number) => {
         const progress = Math.min(1, (now - time) / 480);
-        current.current = Math.round(from + (value - from) * (1 - Math.pow(1 - progress, 3)));
+        // Whole rupiah while counting; the last frame lands on the exact value, sen included.
+        current.current = progress < 1 ? Math.round(from + (value - from) * (1 - Math.pow(1 - progress, 3))) : value;
         node.textContent = rupiah(current.current);
         if (progress < 1) frame = requestAnimationFrame(step);
       };

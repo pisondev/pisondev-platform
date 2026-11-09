@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
-import { nowWIB, rupiah, shortDate } from "@/lib/format";
+import { nowWIB, rupiah, rupiahDigits, shortDate } from "@/lib/format";
 import type { Options, SubItem, Transaction } from "@/lib/types";
-import { AmountInput, formatAmount } from "./AmountInput";
+import { AmountInput, formatAmount, parseAmount } from "./AmountInput";
 import { Select } from "./Select";
 import { Toggle } from "./ui";
 
@@ -13,11 +13,6 @@ import { Toggle } from "./ui";
 const EXCLUDE_MARKER = "dikecualikan dari kuota";
 
 type Kind = "Keluar" | "Masuk";
-
-/** The Amount field holds "25.000"; the dots are display only. */
-function parseAmount(formatted: string): number {
-  return Number(formatted.replace(/\D/g, "")) || 0;
-}
 
 /** A routine transaction that fills the form; nothing is saved until Save. */
 type Template = {
@@ -173,7 +168,7 @@ export function AddTransactionSheet({
   function apply(t: Template) {
     setKind(t.kind);
     setName(t.name);
-    setAmount(formatAmount(String(t.amount)));
+    setAmount(formatAmount(rupiahDigits(t.amount)));
     if (t.category) setCategory(t.category);
     setAccount(t.account);
     setDate(t.date ?? nowWIB());

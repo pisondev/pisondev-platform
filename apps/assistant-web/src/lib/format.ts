@@ -1,11 +1,18 @@
 // Display formats used across the finance screens.
 
 const thousands = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });
+const withSen = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** 87000 -> "Rp87.000", -15000 -> "-Rp15.000". */
+/** 87000 -> "87.000", 416551.65 -> "416.551,65": sen only when there are any. */
+export function rupiahDigits(n: number): string {
+  const v = Math.round(Math.abs(n) * 100) / 100;
+  return Number.isInteger(v) ? thousands.format(v) : withSen.format(v);
+}
+
+/** 87000 -> "Rp87.000", -15000 -> "-Rp15.000", 416551.65 -> "Rp416.551,65". */
 export function rupiah(n: number | null | undefined): string {
   if (n === null || n === undefined) return "-";
-  const abs = thousands.format(Math.abs(n));
+  const abs = rupiahDigits(n);
   return n < 0 ? `-Rp${abs}` : `Rp${abs}`;
 }
 
