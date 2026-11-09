@@ -25,6 +25,15 @@ export const YEARLY_SWATCHES: Swatch[] = [
   ...MONTHLY_SWATCHES,
 ];
 
+// Subscriptions with their own colour, matched by name; the rest take the palette in order.
+const NAMED_SWATCHES: { match: RegExp; swatch: Swatch }[] = [
+  { match: /pisondev\.com/i, swatch: { text: "#1b2a47", from: "#0b1220", to: "#35517f" } }, // blue-black
+];
+
+export function swatchFor(name: string, index: number, swatches: Swatch[]): Swatch {
+  return NAMED_SWATCHES.find((n) => n.match.test(name))?.swatch ?? swatches[index % swatches.length];
+}
+
 function Label({ x, y, w, h, vw, vh, children, style, className = "" }: {
   x: number; y: number; w: number; h: number; vw: number; vh: number; children: ReactNode; style?: CSSProperties; className?: string;
 }) {
@@ -68,7 +77,7 @@ export function SubscriptionChart({ items, swatches, toggle }: {
   const bars = items.map((it, i) => {
     const h = ((BOTTOM - TOP) * Math.max(0, it.price)) / maxPrice;
     const x = AX + slot * i + (slot - barW) / 2;
-    return { ...it, x, y: BOTTOM - h, h, sw: swatches[i % swatches.length] };
+    return { ...it, x, y: BOTTOM - h, h, sw: swatchFor(it.name, i, swatches) };
   });
 
   return (
