@@ -341,11 +341,12 @@ digits change; the caret skips them and deleting a dot deletes the digit beside 
 pasted `Rp` is dropped, and a trailing `rb` or `k` multiplies by 1000.
 Client native validation and API field errors both exist.
 
-A Templates row sits above the fields: small cards (card background, line border, bold
-title, green or maroon `Income`/`Expense · amount` line) that fill the form and focus
-Amount without saving. The applied card keeps a green border and ring and is
-`aria-pressed`. Add new templates to `templates()` in the sheet, named like the existing
-Notion rows.
+A Templates row sits above the fields and scrolls sideways: small cards (card background,
+line border, bold title, green or maroon `Income`/`Expense · amount · date` line) that
+fill the form and focus Amount without saving. The applied card keeps a green border and
+ring and is `aria-pressed`. The weekly allowance comes first, then one card per active
+subscription (from `/finance/subscriptions`), soonest bill first. Fixed templates live in
+`templates()` in the sheet, named like the existing Notion rows.
 
 Expense exposes Category and the exclusion checkbox; Income exposes the weekly allowance
 checkbox. Save uses a green-to-gold gradient, bold white text, and twice Cancel's flex

@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: A template for every active subscription in the New transaction sheet,
+  soonest bill first, after the allowance. It fills Expense, Langganan, Mandiri Debit, the
+  price, "Tagihan <name>" (names starting with "Paket" stay as they are) and the billing
+  day at 10:00, or today at 10:00 while the bill is not due yet (the API refuses future
+  dates). The template row now scrolls sideways.
+
 - 2026-11-09: Subscriptions page: a subscription whose Notes contain `harga bisa berubah`
   shows `*` after its amount and a reminder that the price may change at the next renewal.
   Subscriptions can keep a fixed colour by name; pisondev.com (Hostinger domain, added in
