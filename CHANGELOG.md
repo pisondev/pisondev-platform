@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Sen are shown raised and smaller after the whole rupiah (`Rp416.551` with
+  `,65` as superscript) everywhere amounts are displayed, including the animated figures.
+  Screen readers, labels and messages keep the plain text.
+
 - 2026-11-09: Manage finance from the web app instead of Notion. Subscriptions: add with
   the + button, tap a row to edit price, cycle, Next Billing, status (paused and stopped
   ones get their own list) or notes, and "Mark as paid" to record the bill and move Next
