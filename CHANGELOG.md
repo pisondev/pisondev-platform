@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Cash flow "Bill cycle" grouping, next to Monthly and Weekly: each period
+  runs from the day after a month's last subscription bill to the next month's last bill
+  (the first from the opening balance), with dates in the chart labels and period names
+  (for example "Sep 30 - Oct 27"); the running cycle reads "Oct 28 - now".
+- 2026-11-09: Tapping a transaction or subscription opens it read-only; an Edit button
+  unlocks the fields, so a stray tap cannot change anything.
+
 - 2026-11-09: Sen are shown raised and smaller after the whole rupiah (`Rp416.551` with
   `,65` as superscript) everywhere amounts are displayed, including the animated figures.
   Screen readers, labels and messages keep the plain text.

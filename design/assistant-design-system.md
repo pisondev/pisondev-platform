@@ -363,6 +363,12 @@ while a save runs, exit animation) and `SheetFrame`, `SheetActions`, `Field`, `C
 `FieldError`, `SheetError`. `DeleteButton` asks once more in place ("Confirm") instead of
 a browser dialog. Field-error associations (`aria-describedby`) still need work.
 
+A sheet opened on an existing transaction or subscription starts read-only: fields are
+disabled (panel background, no border), the title is the record ("Transaction" or the
+subscription name), and the actions are Close and Edit. Edit unlocks the fields, focuses
+the first one and swaps in Delete, Cancel and Save, so a stray tap never changes data.
+"Mark as paid" stays available while locked.
+
 The transaction sheet also edits (`editing`): no templates, Delete beside Cancel, and the
 "paid back" checkbox writes the exclusion phrase into Notes so the change stays visible.
 A subscription template adds "Paid the <date> bill", checked by default, which moves that
