@@ -14,16 +14,16 @@ import (
 type Rules struct {
 	Account            string // only this account counts toward balance and quota
 	AnchorSubscription string // its Next Billing is the quota deadline
-	WeeklyAllowance    int64
-	MinBalance         int64
+	WeeklyAllowance    Money
+	MinBalance         Money
 	ExcludeMarker      string // Notes phrase that keeps an expense out of the quota
 }
 
 const day = 24 * time.Hour
 
 // Balance = opening balance + income - expenses, on the tracked account only.
-func Balance(txs []Transaction, r Rules) int64 {
-	var b int64
+func Balance(txs []Transaction, r Rules) Money {
+	var b Money
 	for _, t := range txs {
 		if t.Account != r.Account {
 			continue
@@ -99,8 +99,8 @@ func nextBillingAfter(s Subscription, from time.Time) time.Time {
 
 // dueBy sums every unpaid occurrence of active subscriptions up to and including
 // deadline, projecting each forward by its cycle.
-func dueBy(subs []Subscription, deadline time.Time) int64 {
-	var total int64
+func dueBy(subs []Subscription, deadline time.Time) Money {
+	var total Money
 	for _, s := range subs {
 		if s.Status != SubActive || !s.NextBilling.Valid() || s.PriceValue() <= 0 {
 			continue
@@ -112,8 +112,9 @@ func dueBy(subs []Subscription, deadline time.Time) int64 {
 	return total
 }
 
-func floorThousands(x float64) int64 {
-	return int64(math.Floor(x/1000) * 1000)
+// floorThousands rounds a sen amount down to whole thousands of rupiah.
+func floorThousands(x float64) Money {
+	return Money(math.Floor(x/100_000) * 100_000)
 }
 
 func daysBetween(a, b time.Time) int {
@@ -142,17 +143,17 @@ type QuotaBreakdown struct {
 	DeadlineSource   string `json:"deadlineSource"` // anchor name, or "fallback"
 	WeeksToDeadline  int    `json:"weeksToDeadline"`
 	DepositsExpected int    `json:"depositsExpected"`
-	SubscriptionsDue int64  `json:"subscriptionsDue"`
-	FreeFunds        int64  `json:"freeFunds"`
-	WeeklyAllowance  int64  `json:"weeklyAllowance"`
-	MinBalance       int64  `json:"minBalance"`
+	SubscriptionsDue Money  `json:"subscriptionsDue"`
+	FreeFunds        Money  `json:"freeFunds"`
+	WeeklyAllowance  Money  `json:"weeklyAllowance"`
+	MinBalance       Money  `json:"minBalance"`
 }
 
 type ExpenseItem struct {
 	ID     string    `json:"id"`
 	Date   LocalDate `json:"date"`
 	Name   string    `json:"name"`
-	Amount int64     `json:"amount"`
+	Amount Money     `json:"amount"`
 	Notes  string    `json:"notes"`
 }
 
@@ -160,16 +161,16 @@ type SavingsRow struct {
 	Label     string `json:"label"` // W0, W1, ...
 	Start     string `json:"start,omitempty"`
 	End       string `json:"end,omitempty"` // empty while the week is running
-	Amount    *int64 `json:"amount"`        // nil for estimated weeks
+	Amount    *Money `json:"amount"`        // nil for estimated weeks
 	Notes     string `json:"notes"`
 	Estimated bool   `json:"estimated"`
 	Genesis   bool   `json:"genesis"`
 }
 
 type Savings struct {
-	Save       int64        `json:"save"`   // always Balance - MinBalance
-	Target     int64        `json:"target"` // total of this month's subscription roster
-	Gap        int64        `json:"gap"`    // Target - Save; positive means short
+	Save       Money        `json:"save"`   // always Balance - MinBalance
+	Target     Money        `json:"target"` // total of this month's subscription roster
+	Gap        Money        `json:"gap"`    // Target - Save; positive means short
 	Status     string       `json:"status"` // safe or short
 	CycleStart string       `json:"cycleStart"`
 	Rows       []SavingsRow `json:"rows"`
@@ -178,20 +179,20 @@ type Savings struct {
 type Quota struct {
 	Today       string         `json:"today"`
 	Period      Period         `json:"period"`
-	Balance     int64          `json:"balance"`
-	Max         int64          `json:"max"`
-	Spent       int64          `json:"spent"`
-	Remaining   int64          `json:"remaining"`
+	Balance     Money          `json:"balance"`
+	Max         Money          `json:"max"`
+	Spent       Money          `json:"spent"`
+	Remaining   Money          `json:"remaining"`
 	Percent     int            `json:"percent"`
 	Level       string         `json:"level"` // empty, green, yellow, red
-	NextWeekMax int64          `json:"nextWeekMax"`
+	NextWeekMax Money          `json:"nextWeekMax"`
 	Breakdown   QuotaBreakdown `json:"breakdown"`
 	Expenses    []ExpenseItem  `json:"expenses"`
 	Savings     Savings        `json:"savings"`
 }
 
 type quotaInputs struct {
-	balance   int64
+	balance   Money
 	weekStart time.Time
 	deadline  time.Time
 	subs      []Subscription
@@ -200,7 +201,7 @@ type quotaInputs struct {
 
 type quotaCore struct {
 	weeks, deposits int
-	due, free, max  int64
+	due, free, max  Money
 }
 
 func computeCore(in quotaInputs) quotaCore {
@@ -209,7 +210,7 @@ func computeCore(in quotaInputs) quotaCore {
 		weeks = 1
 	}
 	c := quotaCore{weeks: weeks, deposits: weeks - 1, due: dueBy(in.subs, in.deadline)}
-	c.free = in.balance + int64(c.deposits)*in.r.WeeklyAllowance - c.due - in.r.MinBalance
+	c.free = in.balance + Money(c.deposits)*in.r.WeeklyAllowance - c.due - in.r.MinBalance
 	c.max = floorThousands(float64(c.free) / float64(weeks))
 	return c
 }
@@ -289,7 +290,7 @@ func ComputeQuota(s Snapshot, r Rules, now time.Time) Quota {
 
 // quotaLevel returns the used percentage and its colour: green below 70%, yellow below
 // 90%, red from 90%. "empty" means nothing spent yet. A Max of zero or less is red.
-func quotaLevel(spent, max int64) (int, string) {
+func quotaLevel(spent, max Money) (int, string) {
 	if max <= 0 {
 		return 100, "red"
 	}
@@ -310,11 +311,11 @@ func quotaLevel(spent, max int64) (int, string) {
 // spent and the next allowance arrives. If the deadline falls before next week ends, the
 // bills due by it are taken as paid and the deadline moves one anchor cycle on, which is
 // the state the sheet shows once the anchor bill is paid and its Next Billing shifted.
-func projectNextWeek(in quotaInputs, anchor *Subscription, remaining int64) int64 {
+func projectNextWeek(in quotaInputs, anchor *Subscription, remaining Money) Money {
 	next := in
 	next.weekStart = in.weekStart.AddDate(0, 0, 7)
 	next.balance = in.balance - max(remaining, 0) + in.r.WeeklyAllowance
-	var paid int64
+	var paid Money
 	if next.weekStart.AddDate(0, 0, 7).After(in.deadline) {
 		paid = dueBy(in.subs, in.deadline)
 		next.balance -= paid
@@ -326,13 +327,13 @@ func projectNextWeek(in quotaInputs, anchor *Subscription, remaining int64) int6
 	}
 	core := computeCore(next)
 	core.due -= paid
-	core.free = next.balance + int64(core.deposits)*in.r.WeeklyAllowance - core.due - in.r.MinBalance
+	core.free = next.balance + Money(core.deposits)*in.r.WeeklyAllowance - core.due - in.r.MinBalance
 	return floorThousands(float64(core.free) / float64(core.weeks))
 }
 
 // weekNet is income minus expenses on the tracked account in [from, to).
-func weekNet(txs []Transaction, r Rules, from, to time.Time) int64 {
-	var net int64
+func weekNet(txs []Transaction, r Rules, from, to time.Time) Money {
+	var net Money
 	for _, t := range txs {
 		if t.Account != r.Account || !t.Date.Valid() {
 			continue
@@ -351,7 +352,7 @@ func weekNet(txs []Transaction, r Rules, from, to time.Time) int64 {
 	return net
 }
 
-func computeSavings(s Snapshot, r Rules, balance int64, starts []time.Time, weekStart, periodEnd, deadline, today time.Time) Savings {
+func computeSavings(s Snapshot, r Rules, balance Money, starts []time.Time, weekStart, periodEnd, deadline, today time.Time) Savings {
 	sv := Savings{Save: balance - r.MinBalance}
 	cycleStart := deadline.AddDate(0, -1, 0)
 	sv.CycleStart = cycleStart.Format(dateLayout)
@@ -368,7 +369,7 @@ func computeSavings(s Snapshot, r Rules, balance int64, starts []time.Time, week
 	}
 
 	var inCycle []SavingsRow
-	var cycleSum int64
+	var cycleSum Money
 	for i, st := range starts {
 		if st.Before(cycleStart) {
 			continue

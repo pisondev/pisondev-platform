@@ -153,8 +153,8 @@ func wire(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) app {
 	a.finance = finance.NewService(repo, finance.Rules{
 		Account:            cfg.Finance.Account,
 		AnchorSubscription: cfg.Finance.AnchorSubscription,
-		WeeklyAllowance:    cfg.Finance.WeeklyAllowance,
-		MinBalance:         cfg.Finance.MinBalance,
+		WeeklyAllowance:    finance.Rupiah(cfg.Finance.WeeklyAllowance),
+		MinBalance:         finance.Rupiah(cfg.Finance.MinBalance),
 		ExcludeMarker:      cfg.Finance.ExcludeMarker,
 	}, clock.System, notifier, writable)
 

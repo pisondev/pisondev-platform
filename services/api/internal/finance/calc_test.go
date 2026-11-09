@@ -12,8 +12,8 @@ import (
 var testRules = Rules{
 	Account:            "Mandiri Debit",
 	AnchorSubscription: "Claude",
-	WeeklyAllowance:    250000,
-	MinBalance:         50000,
+	WeeklyAllowance:    Rupiah(250000),
+	MinBalance:         Rupiah(50000),
 	ExcludeMarker:      "dikecualikan dari kuota",
 }
 
@@ -26,11 +26,11 @@ func d(s string) LocalDate {
 }
 
 func tx(date, name, typ, cat string, amount int64, notes string) Transaction {
-	return Transaction{ID: name, Date: d(date), Name: name, Type: typ, Category: cat, Account: "Mandiri Debit", Amount: ptr(amount), Notes: notes}
+	return Transaction{ID: name, Date: d(date), Name: name, Type: typ, Category: cat, Account: "Mandiri Debit", Amount: ptr(Rupiah(amount)), Notes: notes}
 }
 
 func sub(name string, price int64, cycle string, day int64, next string) Subscription {
-	return Subscription{ID: name, Name: name, Price: ptr(price), Cycle: cycle, Status: SubActive, BillingDay: ptr(day), NextBilling: d(next)}
+	return Subscription{ID: name, Name: name, Price: ptr(Rupiah(price)), Cycle: cycle, Status: SubActive, BillingDay: ptr(day), NextBilling: d(next)}
 }
 
 // snapshotOct1 reproduces the reference figures written down on 1 Oct 2026:
@@ -51,7 +51,7 @@ func snapshotOct1() Snapshot {
 			tx("2026-09-30T12:00", "Shared plan refund", TypeIncome, "", 35000, ""),
 			tx("2026-09-30T13:00", "Bakery", TypeExpense, "Makan", 15000, ""),
 			tx("2026-10-01T12:30", "Lunch", TypeExpense, "Makan", 32500, ""),
-			{ID: "gopay", Date: d("2026-10-01"), Name: "Wallet snack", Type: TypeExpense, Category: "Makan", Account: "GoPay", Amount: ptr(int64(9000))},
+			{ID: "gopay", Date: d("2026-10-01"), Name: "Wallet snack", Type: TypeExpense, Category: "Makan", Account: "GoPay", Amount: ptr(Rupiah(9000))},
 		},
 		Subscriptions: []Subscription{
 			sub("Claude", 401998, CycleMonthly, 20, "2026-10-20"),
@@ -79,10 +79,10 @@ func at(s string) time.Time {
 func TestQuotaMatchesSheetOct1(t *testing.T) {
 	q := ComputeQuota(snapshotOct1(), testRules, at("2026-10-01T20:00"))
 
-	check := func(name string, got, want int64) {
+	check := func(name string, got Money, want int64) {
 		t.Helper()
-		if got != want {
-			t.Errorf("%s = %d, want %d", name, got, want)
+		if got != Rupiah(want) {
+			t.Errorf("%s = %s, want %d", name, got, want)
 		}
 	}
 	check("Balance", q.Balance, 470877)
@@ -114,7 +114,7 @@ func TestQuotaMatchesSheetOct1(t *testing.T) {
 		label  string
 		amount int64
 	}{{"W0", 103471}, {"W1", 54109}, {"W2", 263297}} {
-		if rows[i].Label != want.label || rows[i].Amount == nil || *rows[i].Amount != want.amount {
+		if rows[i].Label != want.label || rows[i].Amount == nil || *rows[i].Amount != Rupiah(want.amount) {
 			t.Errorf("row %d = %s %v, want %s %d", i, rows[i].Label, rows[i].Amount, want.label, want.amount)
 		}
 	}
@@ -129,7 +129,7 @@ func TestQuotaMatchesSheetOct1(t *testing.T) {
 		t.Errorf("estimated weeks = %v", est)
 	}
 
-	if len(q.Expenses) == 0 || q.Expenses[0].Name != "Lunch" || q.Expenses[0].Amount != 32500 {
+	if len(q.Expenses) == 0 || q.Expenses[0].Name != "Lunch" || q.Expenses[0].Amount != Rupiah(32500) {
 		t.Errorf("latest expense = %+v", q.Expenses)
 	}
 	for _, e := range q.Expenses {
@@ -157,10 +157,10 @@ func TestNextWeekRollsOverDeadline(t *testing.T) {
 	if rem < 0 {
 		rem = 0
 	}
-	balance := q.Balance - rem + 250000 - 466998
-	free := balance + 3*250000 - 591898 - 50000
+	balance := q.Balance - rem + Rupiah(250000) - Rupiah(466998)
+	free := balance + 3*Rupiah(250000) - Rupiah(591898) - Rupiah(50000)
 	if want := floorThousands(float64(free) / 4); q.NextWeekMax != want {
-		t.Errorf("NextWeekMax = %d, want %d", q.NextWeekMax, want)
+		t.Errorf("NextWeekMax = %s, want %s", q.NextWeekMax, want)
 	}
 	if q.Period.End != "2026-10-18" {
 		t.Errorf("Period.End = %s, want 2026-10-18", q.Period.End)
@@ -199,7 +199,7 @@ func TestQuotaLevel(t *testing.T) {
 		{1000, 0, 100, "red"},
 	}
 	for _, tc := range cases {
-		pct, level := quotaLevel(tc.spent, tc.max)
+		pct, level := quotaLevel(Rupiah(tc.spent), Rupiah(tc.max))
 		if pct != tc.pct || level != tc.level {
 			t.Errorf("quotaLevel(%d, %d) = %d %s, want %d %s", tc.spent, tc.max, pct, level, tc.pct, tc.level)
 		}
@@ -209,8 +209,8 @@ func TestQuotaLevel(t *testing.T) {
 func TestRosterRule(t *testing.T) {
 	s := snapshotOct1()
 	r := ComputeRoster(s.Subscriptions)
-	if r.Month != "2026-10" || r.Total != 591898 || len(r.Items) != 4 {
-		t.Fatalf("roster = %s %d %d", r.Month, r.Total, len(r.Items))
+	if r.Month != "2026-10" || r.Total != Rupiah(591898) || len(r.Items) != 4 {
+		t.Fatalf("roster = %s %s %d", r.Month, r.Total, len(r.Items))
 	}
 	if r.Items[0].Name != "Claude" || r.Items[len(r.Items)-1].Name != "Spotify" {
 		t.Errorf("order = %v", r.Items)
@@ -247,8 +247,8 @@ func TestCashflowMonthly(t *testing.T) {
 	if len(cf.Points) != 2 || cf.Points[0].Label != "Sep" || cf.Points[1].Label != "Oct" {
 		t.Fatalf("points = %+v", cf.Points)
 	}
-	if cf.Points[1].Outcome != 32500 {
-		t.Errorf("Oct outcome = %d, want 32500 (GoPay excluded)", cf.Points[1].Outcome)
+	if cf.Points[1].Outcome != Rupiah(32500) {
+		t.Errorf("Oct outcome = %s, want 32500 (GoPay excluded)", cf.Points[1].Outcome)
 	}
 }
 

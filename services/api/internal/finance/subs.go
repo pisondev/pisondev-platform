@@ -10,7 +10,7 @@ import (
 type SubItem struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
-	Price       int64     `json:"price"`
+	Price       Money     `json:"price"`
 	Cycle       string    `json:"cycle"`
 	BillingDay  *int64    `json:"billingDay"`
 	NextBilling LocalDate `json:"nextBilling"`
@@ -19,7 +19,7 @@ type SubItem struct {
 
 type SubGroup struct {
 	Items []SubItem `json:"items"`
-	Total int64     `json:"total"`
+	Total Money     `json:"total"`
 }
 
 type RosterItem struct {
@@ -31,14 +31,14 @@ type RosterItem struct {
 type Roster struct {
 	Month string       `json:"month"` // YYYY-MM
 	Items []RosterItem `json:"items"`
-	Total int64        `json:"total"`
+	Total Money        `json:"total"`
 }
 
 type SubscriptionsView struct {
 	Monthly SubGroup `json:"monthly"`
 	Yearly  SubGroup `json:"yearly"`
 	Roster  Roster   `json:"roster"`
-	Savings int64    `json:"savings"`
+	Savings Money    `json:"savings"`
 	Status  string   `json:"status"` // safe or short
 }
 

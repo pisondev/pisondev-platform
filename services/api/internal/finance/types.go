@@ -30,19 +30,19 @@ type Transaction struct {
 	Type           string    `json:"type"`
 	Category       string    `json:"category"`
 	Account        string    `json:"account"`
-	Amount         *int64    `json:"amount"`
-	ReportedAmount *int64    `json:"reportedAmount"`
+	Amount         *Money    `json:"amount"`
+	ReportedAmount *Money    `json:"reportedAmount"`
 	ReportedDate   LocalDate `json:"reportedDate"`
 	Status         string    `json:"status"`
 	Notes          string    `json:"notes"`
 }
 
-func (t Transaction) AmountValue() int64 { return deref(t.Amount) }
+func (t Transaction) AmountValue() Money { return deref(t.Amount) }
 
 type Subscription struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
-	Price       *int64    `json:"price"`
+	Price       *Money    `json:"price"`
 	Cycle       string    `json:"cycle"`
 	Status      string    `json:"status"`
 	BillingDay  *int64    `json:"billingDay"`
@@ -50,15 +50,15 @@ type Subscription struct {
 	Notes       string    `json:"notes"`
 }
 
-func (s Subscription) PriceValue() int64 { return deref(s.Price) }
+func (s Subscription) PriceValue() Money { return deref(s.Price) }
 
 // Week is one row of Weekly Recap. Week, Income and Spent are computed by the sheet.
 type Week struct {
 	ID     string    `json:"id"`
 	Week   string    `json:"week"`
 	Start  LocalDate `json:"start"`
-	Income *int64    `json:"income"`
-	Spent  *int64    `json:"spent"`
+	Income *Money    `json:"income"`
+	Spent  *Money    `json:"spent"`
 	Notes  string    `json:"notes"`
 }
 
@@ -93,8 +93,8 @@ var WeekFields = []Field{
 // Canonical encodings, aligned with the field lists above.
 
 func (t Transaction) canonical() []string {
-	return []string{t.Date.String(), t.Name, t.Type, t.Category, t.Account, numText(t.Amount),
-		numText(t.ReportedAmount), t.ReportedDate.String(), t.Status, t.Notes}
+	return []string{t.Date.String(), t.Name, t.Type, t.Category, t.Account, moneyText(t.Amount),
+		moneyText(t.ReportedAmount), t.ReportedDate.String(), t.Status, t.Notes}
 }
 
 func parseTransaction(v []string) (Transaction, error) {
@@ -107,10 +107,10 @@ func parseTransaction(v []string) (Transaction, error) {
 		return t, err
 	}
 	t.Name, t.Type, t.Category, t.Account = v[1], v[2], v[3], v[4]
-	if t.Amount, err = parseNum(v[5]); err != nil {
+	if t.Amount, err = parseMoneyPtr(v[5]); err != nil {
 		return t, err
 	}
-	if t.ReportedAmount, err = parseNum(v[6]); err != nil {
+	if t.ReportedAmount, err = parseMoneyPtr(v[6]); err != nil {
 		return t, err
 	}
 	if t.ReportedDate, err = ParseLocalDate(v[7]); err != nil {
@@ -121,7 +121,7 @@ func parseTransaction(v []string) (Transaction, error) {
 }
 
 func (s Subscription) canonical() []string {
-	return []string{s.Name, numText(s.Price), s.Cycle, s.Status, numText(s.BillingDay), s.NextBilling.String(), s.Notes}
+	return []string{s.Name, moneyText(s.Price), s.Cycle, s.Status, numText(s.BillingDay), s.NextBilling.String(), s.Notes}
 }
 
 func parseSubscription(v []string) (Subscription, error) {
@@ -131,7 +131,7 @@ func parseSubscription(v []string) (Subscription, error) {
 		return s, err
 	}
 	s.Name = v[0]
-	if s.Price, err = parseNum(v[1]); err != nil {
+	if s.Price, err = parseMoneyPtr(v[1]); err != nil {
 		return s, err
 	}
 	s.Cycle, s.Status = v[2], v[3]
@@ -146,7 +146,7 @@ func parseSubscription(v []string) (Subscription, error) {
 }
 
 func (w Week) canonical() []string {
-	return []string{w.Week, w.Start.String(), numText(w.Income), numText(w.Spent), w.Notes}
+	return []string{w.Week, w.Start.String(), moneyText(w.Income), moneyText(w.Spent), w.Notes}
 }
 
 func parseWeek(v []string) (Week, error) {
@@ -159,10 +159,10 @@ func parseWeek(v []string) (Week, error) {
 	if w.Start, err = ParseLocalDate(v[1]); err != nil {
 		return w, err
 	}
-	if w.Income, err = parseNum(v[2]); err != nil {
+	if w.Income, err = parseMoneyPtr(v[2]); err != nil {
 		return w, err
 	}
-	if w.Spent, err = parseNum(v[3]); err != nil {
+	if w.Spent, err = parseMoneyPtr(v[3]); err != nil {
 		return w, err
 	}
 	w.Notes = v[4]
@@ -183,7 +183,7 @@ func numText(n *int64) string {
 	return strconv.FormatInt(*n, 10)
 }
 
-// parseNum reads a canonical number. Fractions are rounded: rupiah are whole.
+// parseNum reads a canonical whole number such as a billing day. Fractions are rounded.
 func parseNum(s string) (*int64, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -200,7 +200,7 @@ func parseNum(s string) (*int64, error) {
 	return &n, nil
 }
 
-func deref(n *int64) int64 {
+func deref[T ~int64](n *T) T {
 	if n == nil {
 		return 0
 	}

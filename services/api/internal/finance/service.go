@@ -67,7 +67,7 @@ func (s *Service) Options(ctx context.Context) (map[string][]string, error) {
 type AddInput struct {
 	Type            string `json:"type"`
 	Name            string `json:"name"`
-	Amount          int64  `json:"amount"`
+	Amount          Money  `json:"amount"`
 	Category        string `json:"category"`
 	Account         string `json:"account"`
 	Date            string `json:"date"`
@@ -140,7 +140,7 @@ func (s *Service) AddTransaction(ctx context.Context, actor string, in AddInput)
 		errs["name"] = "Name is longer than 100 characters."
 	}
 	if in.Amount <= 0 {
-		errs["amount"] = "Amount must be a positive whole number."
+		errs["amount"] = "Amount must be more than zero."
 	}
 	t.Amount, t.ReportedAmount = ptr(in.Amount), ptr(in.Amount)
 	if t.Type == TypeExpense {
@@ -232,8 +232,8 @@ type PatchInput struct {
 	Type           *string `json:"type"`
 	Category       *string `json:"category"`
 	Account        *string `json:"account"`
-	Amount         *int64  `json:"amount"`
-	ReportedAmount *int64  `json:"reportedAmount"`
+	Amount         *Money  `json:"amount"`
+	ReportedAmount *Money  `json:"reportedAmount"`
 	ReportedDate   *string `json:"reportedDate"`
 	Status         *string `json:"status"`
 	Notes          *string `json:"notes"`
@@ -296,7 +296,7 @@ func (s *Service) UpdateTransaction(ctx context.Context, actor, id string, in Pa
 		}
 		if in.Amount != nil {
 			if *in.Amount <= 0 {
-				errs["amount"] = "Amount must be a positive whole number."
+				errs["amount"] = "Amount must be more than zero."
 			}
 			// Reported values follow while they still equal the old ones, i.e. until the
 			// row is matched against the bank statement.

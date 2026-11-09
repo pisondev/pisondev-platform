@@ -291,7 +291,7 @@ func newHarness(t *testing.T) *harness {
 	syncer := NewSyncer(NewClient("test").WithBaseURL(srv.URL), pool, []Table{
 		{Store: trx, DBID: dbTrx}, {Store: subs, DBID: dbSub}, {Store: weeks, DBID: dbWeek},
 	}, repo.SaveOptions, ModeFull, time.Minute, log)
-	svc := finance.NewService(repo, finance.Rules{Account: "Mandiri Debit", AnchorSubscription: "Claude", WeeklyAllowance: 250000, MinBalance: 50000},
+	svc := finance.NewService(repo, finance.Rules{Account: "Mandiri Debit", AnchorSubscription: "Claude", WeeklyAllowance: finance.Rupiah(250000), MinBalance: finance.Rupiah(50000)},
 		clock.System, nil, nil)
 	return &harness{t: t, pool: pool, fake: fake, syncer: syncer, svc: svc}
 }
@@ -344,7 +344,7 @@ func TestSyncTwoWay(t *testing.T) {
 
 	// 2. A local edit is pushed, only the changed fields.
 	tr := h.txByName("Makan siang")
-	if _, err := h.svc.UpdateTransaction(ctx, "test", tr.ID, finance.PatchInput{Amount: ptr64(27000)}); err != nil {
+	if _, err := h.svc.UpdateTransaction(ctx, "test", tr.ID, finance.PatchInput{Amount: rp(27000)}); err != nil {
 		t.Fatal(err)
 	}
 	h.sync(Options{})
@@ -379,7 +379,7 @@ func TestSyncTwoWay(t *testing.T) {
 	}
 
 	// 5. A new allowance from the web creates the transaction and a new week in Notion.
-	if _, err := h.svc.AddTransaction(ctx, "test", finance.AddInput{Type: "Masuk", Name: "Sangu", Amount: 250000, Date: today(0), WeeklyAllowance: true}); err != nil {
+	if _, err := h.svc.AddTransaction(ctx, "test", finance.AddInput{Type: "Masuk", Name: "Sangu", Amount: finance.Rupiah(250000), Date: today(0), WeeklyAllowance: true}); err != nil {
 		t.Fatal(err)
 	}
 	h.sync(Options{})
@@ -401,7 +401,7 @@ func TestSyncTwoWay(t *testing.T) {
 	h.sync(Options{})
 	snap, _ := h.svc.Snapshot(ctx)
 	for _, w := range snap.Weeks {
-		if w.Week == "W1" && (w.Income == nil || *w.Income != 300000) {
+		if w.Week == "W1" && (w.Income == nil || *w.Income != finance.Rupiah(300000)) {
 			t.Errorf("week income = %v, want 300000", w.Income)
 		}
 	}
@@ -464,12 +464,36 @@ func TestSyncPullModeNeverWrites(t *testing.T) {
 	if len(h.fake.writes) != 0 {
 		t.Errorf("pull mode wrote to Notion: %v", h.fake.writes)
 	}
-	if got := h.txByName("Roti").AmountValue(); got != 15000 {
-		t.Errorf("pull mode should restore Notion's value, got %d", got)
+	if got := h.txByName("Roti").AmountValue(); got != finance.Rupiah(15000) {
+		t.Errorf("pull mode should restore Notion's value, got %s", got)
 	}
 	_ = id
 	if err := h.syncer.Writable(); err == nil {
 		t.Error("pull mode must refuse web writes")
+	}
+}
+
+// Bank amounts with sen come in exact and do not look changed on the next pass.
+func TestSyncKeepsDecimalAmounts(t *testing.T) {
+	h := newHarness(t)
+	id := h.fake.seed(dbTrx, []string{today(-1), "Tagihan Claude", "Keluar", "Langganan", "Mandiri Debit", "416551.65", "416551.65", today(-1), "Estimasi", ""})
+	h.fake.seed(dbSub, []string{"Domain pisondev.com", "181165.95", "Tahunan", "Aktif", "20", today(300), ""})
+	h.sync(Options{})
+	if got := h.txByName("Tagihan Claude").AmountValue(); got != 41655165 {
+		t.Errorf("amount = %s, want 416551.65", got)
+	}
+	snap, _ := h.svc.Snapshot(context.Background())
+	if len(snap.Subscriptions) != 1 || snap.Subscriptions[0].PriceValue() != 18116595 {
+		t.Errorf("subscriptions = %+v", snap.Subscriptions)
+	}
+	if c := h.sync(Options{}); len(c) != 0 {
+		t.Errorf("decimal rows should settle, got %+v", c)
+	}
+	if len(h.fake.writes) != 0 {
+		t.Errorf("decimal rows were written back: %v", h.fake.writes)
+	}
+	if got := h.fake.value(t, id, "Amount"); got != "416551.65" {
+		t.Errorf("Notion Amount = %s", got)
 	}
 }
 
@@ -491,7 +515,7 @@ func TestSyncLostCreateAnswerMakesNoDuplicate(t *testing.T) {
 	h := newHarness(t)
 	ctx := context.Background()
 	f := h.fake
-	tr, err := h.svc.AddTransaction(ctx, "test", finance.AddInput{Type: "Keluar", Name: "Kopi", Amount: 1, Category: "Makan", Date: today(0)})
+	tr, err := h.svc.AddTransaction(ctx, "test", finance.AddInput{Type: "Keluar", Name: "Kopi", Amount: finance.Rupiah(1), Category: "Makan", Date: today(0)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -530,5 +554,5 @@ func TestSyncLostCreateAnswerMakesNoDuplicate(t *testing.T) {
 	}
 }
 
-func ptr64(v int64) *int64  { return &v }
-func strp(v string) *string { return &v }
+func rp(v int64) *finance.Money { m := finance.Rupiah(v); return &m }
+func strp(v string) *string     { return &v }

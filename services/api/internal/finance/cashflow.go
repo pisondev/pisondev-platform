@@ -11,9 +11,9 @@ type CashflowPoint struct {
 	Label   string `json:"label"`
 	Start   string `json:"start"`
 	End     string `json:"end"`
-	Income  int64  `json:"income"`
-	Outcome int64  `json:"outcome"`
-	Net     int64  `json:"net"`
+	Income  Money  `json:"income"`
+	Outcome Money  `json:"outcome"`
+	Net     Money  `json:"net"`
 }
 
 type Cashflow struct {
