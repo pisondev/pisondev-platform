@@ -17,12 +17,16 @@ type CashflowPoint struct {
 }
 
 type Cashflow struct {
-	Granularity string          `json:"granularity"` // monthly or weekly
+	Granularity string          `json:"granularity"` // monthly, weekly or billing
 	Points      []CashflowPoint `json:"points"`
 }
 
 // ComputeCashflow totals income and expenses of the tracked account per calendar month,
-// or per Weekly Recap week, from the opening balance up to today.
+// per Weekly Recap week, or per billing cycle, from the opening balance up to today.
+//
+// A billing cycle ends on the day of the month's last subscription bill (a Langganan
+// expense) and starts the day after the previous one, or at the opening balance. Its
+// label is that end date; the cycle still running after the last bill is "Now".
 func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cashflow {
 	today := clock.Day(now)
 	cf := Cashflow{Granularity: granularity, Points: []CashflowPoint{}}
@@ -30,7 +34,18 @@ func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cas
 	var buckets []bucket
 	var labels []string
 
-	if granularity == "weekly" {
+	first, ok := openingDate(s.Transactions)
+	if !ok {
+		first = today
+		for _, t := range s.Transactions {
+			if t.Date.Valid() && t.Date.Day().Before(first) {
+				first = t.Date.Day()
+			}
+		}
+	}
+
+	switch granularity {
+	case "weekly":
 		starts := weekStarts(s.Weeks, today)
 		for i, st := range starts {
 			to := today.AddDate(0, 0, 1)
@@ -40,17 +55,19 @@ func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cas
 			buckets = append(buckets, bucket{st, to})
 			labels = append(labels, st.Format("Jan 2"))
 		}
-	} else {
-		cf.Granularity = "monthly"
-		first, ok := openingDate(s.Transactions)
-		if !ok {
-			first = today
-			for _, t := range s.Transactions {
-				if t.Date.Valid() && t.Date.Day().Before(first) {
-					first = t.Date.Day()
-				}
-			}
+	case "billing":
+		from := first
+		for _, cut := range billingCutoffs(s.Transactions, r, first, today) {
+			buckets = append(buckets, bucket{from, cut.AddDate(0, 0, 1)})
+			labels = append(labels, cut.Format("Jan 2"))
+			from = cut.AddDate(0, 0, 1)
 		}
+		if !from.After(today) {
+			buckets = append(buckets, bucket{from, today.AddDate(0, 0, 1)})
+			labels = append(labels, "Now")
+		}
+	default:
+		cf.Granularity = "monthly"
 		for m := time.Date(first.Year(), first.Month(), 1, 0, 0, 0, 0, clock.WIB); !m.After(today); m = m.AddDate(0, 1, 0) {
 			buckets = append(buckets, bucket{m, m.AddDate(0, 1, 0)})
 			labels = append(labels, m.Format("Jan"))
@@ -78,6 +95,31 @@ func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cas
 		cf.Points = append(cf.Points, p)
 	}
 	return cf
+}
+
+// billingCutoffs returns, per month, the day of the last subscription bill on the
+// tracked account, from first up to today, ascending.
+func billingCutoffs(txs []Transaction, r Rules, first, today time.Time) []time.Time {
+	last := map[time.Time]time.Time{} // month -> latest bill day
+	for _, t := range txs {
+		if t.Type != TypeExpense || t.Category != CategorySubscription || t.Account != r.Account || !t.Date.Valid() {
+			continue
+		}
+		d := t.Date.Day()
+		if d.Before(first) || d.After(today) {
+			continue
+		}
+		m := time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, clock.WIB)
+		if d.After(last[m]) {
+			last[m] = d
+		}
+	}
+	out := make([]time.Time, 0, len(last))
+	for _, d := range last {
+		out = append(out, d)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Before(out[j]) })
+	return out
 }
 
 // TransactionFilter selects rows for the list under the cash flow chart.

@@ -296,3 +296,40 @@ func equalStrings(a, b []string) bool {
 	}
 	return true
 }
+
+func TestCashflowBillingCycles(t *testing.T) {
+	sub := func(date string, amount int64) Transaction {
+		return tx(date, "Bill "+date, TypeExpense, CategorySubscription, amount, "")
+	}
+	s := Snapshot{Transactions: []Transaction{
+		tx("2026-09-20T15:07", "Opening balance", TypeOpening, "", 153471, ""),
+		sub("2026-09-25", 664890),
+		sub("2026-09-29", 65000),
+		tx("2026-09-30", "Transfer", TypeIncome, "", 450000, ""),
+		sub("2026-10-01", 100750),
+		tx("2026-10-20T10:00", "Claude", TypeExpense, CategorySubscription, 0, ""),
+		sub("2026-10-27", 65000),
+		tx("2026-10-27T16:00", "Coffee", TypeExpense, "Makan", 25000, ""),
+		tx("2026-10-28", "Snack", TypeExpense, "Makan", 3000, ""),
+		tx("2026-11-02", "Allowance", TypeIncome, "", 350000, ""),
+	}}
+	s.Transactions[5].Amount = ptr(Money(41655165)) // 416.551,65
+	cf := ComputeCashflow(s, testRules, "billing", at("2026-11-09T09:00"))
+	want := []struct {
+		label, start, end string
+		income, outcome   Money
+	}{
+		{"Sep 29", "2026-09-20", "2026-09-29", 0, Rupiah(664890 + 65000)},
+		{"Oct 27", "2026-09-30", "2026-10-27", Rupiah(450000), Rupiah(100750+65000+25000) + 41655165},
+		{"Now", "2026-10-28", "2026-11-09", Rupiah(350000), Rupiah(3000)},
+	}
+	if cf.Granularity != "billing" || len(cf.Points) != len(want) {
+		t.Fatalf("cycles = %s %+v", cf.Granularity, cf.Points)
+	}
+	for i, w := range want {
+		p := cf.Points[i]
+		if p.Label != w.label || p.Start != w.start || p.End != w.end || p.Income != w.income || p.Outcome != w.outcome {
+			t.Errorf("cycle %d = %+v, want %+v", i, p, w)
+		}
+	}
+}
