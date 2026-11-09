@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { api } from "@/lib/api";
 import { dateRange, rupiah, shortDate, signedRupiah } from "@/lib/format";
-import type { ExpenseItem, Options, Quota, SavingsRow, Subscriptions } from "@/lib/types";
+import type { ExpenseItem, Options, Quota, SavingsRow, Subscriptions, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { AddTransactionSheet } from "../AddTransactionSheet";
 import { SavingsChart } from "../Charts";
@@ -18,6 +19,17 @@ export function QuotaScreen() {
   const [saved, setSaved] = useState<string>();
   const q = quota.data;
   const close = useCallback(() => setAdding(false), []);
+  const [editing, setEditing] = useState<Transaction>();
+  const closeEdit = useCallback(() => setEditing(undefined), []);
+  // The expense list carries a summary; the edit form needs the whole transaction.
+  const edit = (e: ExpenseItem) =>
+    api<Transaction>(`/finance/transactions/${e.id}`).then(setEditing, (err: Error) => setSaved(`Could not open ${e.name}: ${err.message}`));
+  const refresh = (message: string) => {
+    setEditing(undefined);
+    setSaved(message);
+    quota.reload();
+    subs.reload();
+  };
 
   return (
     <>
@@ -66,6 +78,8 @@ export function QuotaScreen() {
                   { key: "amount", label: "Amount", width: 228, cell: (e) => `-${rupiah(e.amount)}`, className: () => "text-maroon" },
                   { key: "desc", label: "Description", width: 330, cell: (e) => <span title={e.notes || e.name}>{e.name}</span> },
                 ]}
+                onRowClick={edit}
+                rowLabel={(e) => `Edit ${e.name}`}
               />
             </Card>
           </Panel>
@@ -118,7 +132,17 @@ export function QuotaScreen() {
             setAdding(false);
             setSaved(`Saved: ${t.name}, ${rupiah(t.amount)}. It reaches Notion and the sheet within a minute.`);
             quota.reload();
+            subs.reload();
           }}
+        />
+      ) : null}
+      {editing ? (
+        <AddTransactionSheet
+          editing={editing}
+          options={options.data}
+          onClose={closeEdit}
+          onSaved={(t) => refresh(`Saved: ${t.name}, ${rupiah(t.amount)}.`)}
+          onDeleted={(t) => refresh(`Deleted ${t.name}.`)}
         />
       ) : null}
     </>

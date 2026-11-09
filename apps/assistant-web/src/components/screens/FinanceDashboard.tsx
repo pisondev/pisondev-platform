@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { rupiah, shortDate, signedRupiah } from "@/lib/format";
-import type { Cashflow, CashflowKind as Kind, Granularity, Quota, Subscriptions, Summary, Transaction } from "@/lib/types";
+import type { Cashflow, CashflowKind as Kind, Granularity, Options, Quota, Subscriptions, Summary, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { AddTransactionSheet } from "../AddTransactionSheet";
 import { CashflowChart, cashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Select } from "../Select";
@@ -18,6 +19,13 @@ export function FinanceDashboard() {
   const txs = useApi<Transaction[]>(`/finance/transactions?kind=${kind}&limit=100`);
   const subs = useApi<Subscriptions>("/finance/subscriptions");
   const quota = useApi<Quota>("/finance/quota");
+  const [editing, setEditing] = useState<Transaction>();
+  const options = useApi<Options>(editing ? "/finance/options" : null);
+  const closeEdit = useCallback(() => setEditing(undefined), []);
+  const refresh = () => {
+    setEditing(undefined);
+    [summary, cashflow, txs, quota].forEach((r) => r.reload());
+  };
 
   const { labels, series } = useMemo(() => cashflowSeries(cashflow.data?.points ?? [], kind), [cashflow.data, kind]);
 
@@ -81,6 +89,8 @@ export function FinanceDashboard() {
               },
               { key: "name", label: "Name", width: 330, cell: (t) => t.name },
             ]}
+            onRowClick={setEditing}
+            rowLabel={(t) => `Edit ${t.name}`}
           />
         </Card>
       </Panel>
@@ -120,6 +130,9 @@ export function FinanceDashboard() {
           ) : null}
         </NavTile>
       </nav>
+      {editing ? (
+        <AddTransactionSheet editing={editing} options={options.data} onClose={closeEdit} onSaved={refresh} onDeleted={refresh} />
+      ) : null}
     </>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { dateRange, rupiah, shortDate, signedRupiah } from "@/lib/format";
-import type { Cashflow, CashflowKind as Kind, CashflowPoint, Granularity, Transaction } from "@/lib/types";
+import type { Cashflow, CashflowKind as Kind, CashflowPoint, Granularity, Options, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { AddTransactionSheet } from "../AddTransactionSheet";
 import { CashflowChart, cashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Select } from "../Select";
@@ -23,6 +24,14 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
   const [period, setPeriod] = useState("all"); // a period's start date, or "all"
   const cashflow = useApi<Cashflow>(`/finance/cashflow?granularity=${granularity}`);
   const txs = useApi<Transaction[]>(`/finance/transactions?kind=${kind}&limit=${LIMIT}`);
+  const [editing, setEditing] = useState<Transaction>();
+  const options = useApi<Options>(editing ? "/finance/options" : null);
+  const closeEdit = useCallback(() => setEditing(undefined), []);
+  const refresh = () => {
+    setEditing(undefined);
+    cashflow.reload();
+    txs.reload();
+  };
 
   const points = useMemo(() => cashflow.data?.points ?? [], [cashflow.data]);
   const { labels, series } = useMemo(() => cashflowSeries(points, kind), [points, kind]);
@@ -138,6 +147,8 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
               { key: "name", label: "Name", width: 300, cell: (t) => t.name },
               { key: "category", label: "Category", width: 200, cell: (t) => t.category || "-", className: () => "text-muted" },
             ]}
+            onRowClick={setEditing}
+            rowLabel={(t) => `Edit ${t.name}`}
           />
         </Card>
         <p className="px-6 pt-16 text-small text-muted">
@@ -145,6 +156,9 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
           {txs.data?.length === LIMIT ? ` (latest ${LIMIT} loaded)` : ""}. Totals count the tracked account only.
         </p>
       </Panel>
+      {editing ? (
+        <AddTransactionSheet editing={editing} options={options.data} onClose={closeEdit} onSaved={refresh} onDeleted={refresh} />
+      ) : null}
     </>
   );
 }

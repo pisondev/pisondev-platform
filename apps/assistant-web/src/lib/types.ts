@@ -36,6 +36,7 @@ export type SubItem = {
   name: string;
   price: number;
   cycle: string;
+  status: string; // Aktif, Dijeda or Berhenti
   billingDay: number | null;
   nextBilling: string | null;
   notes: string;
@@ -45,6 +46,7 @@ export type Subscriptions = {
   monthly: { items: SubItem[]; total: number };
   yearly: { items: SubItem[]; total: number };
   roster: { month: string; items: (SubItem & { paid: boolean })[]; total: number };
+  inactive: SubItem[]; // paused or stopped
   savings: number;
   status: "safe" | "short";
 };

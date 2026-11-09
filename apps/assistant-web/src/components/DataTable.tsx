@@ -12,7 +12,8 @@ export type Column<T> = {
 /**
  * Table card from the design: grey header with a dark rule, light row rules, and a
  * scroll area showing `visibleRows` rows at a time. `action` sits at the right end of the
- * header (for example a DetailLink), so keep the last column's label short.
+ * header (for example a DetailLink), so keep the last column's label short. With
+ * `onRowClick` each row is a button named by `rowLabel`.
  */
 export function DataTable<T>({
   columns,
@@ -24,6 +25,8 @@ export function DataTable<T>({
   rowClassName,
   rowStyle,
   action,
+  onRowClick,
+  rowLabel,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -34,6 +37,8 @@ export function DataTable<T>({
   rowClassName?: (row: T, index: number) => string;
   rowStyle?: (row: T, index: number) => CSSProperties;
   action?: ReactNode;
+  onRowClick?: (row: T) => void;
+  rowLabel?: (row: T) => string;
 }) {
   const template = columns.map((c) => `${c.width}fr`).join(" ");
   const rowHeight = size === "body" ? "max(calc(var(--spacing) * 64), 32px)" : "max(calc(var(--spacing) * 61), 28px)";
@@ -56,22 +61,28 @@ export function DataTable<T>({
             {empty}
           </p>
         ) : (
-          rows.map((row, i) => (
-            <div
-              key={rowKey(row, i)}
-              className={`motion-row grid items-center gap-x-12 border-b border-line px-6 last:border-b-0 ${rowClassName?.(row, i) ?? ""}`}
-              style={{ ...grid, minHeight: rowHeight, animationDelay: `${Math.min(i, 3) * 25}ms`, ...rowStyle?.(row, i) }}
-            >
-              {columns.map((c) => (
-                <span
-                  key={c.key}
-                  className={`min-w-0 truncate ${c.align === "center" ? "text-center" : ""} ${c.className?.(row, i) ?? ""}`}
-                >
-                  {c.cell(row, i)}
-                </span>
-              ))}
-            </div>
-          ))
+          rows.map((row, i) => {
+            const Row = onRowClick ? "button" : "div";
+            return (
+              <Row
+                key={rowKey(row, i)}
+                {...(onRowClick ? { type: "button" as const, onClick: () => onRowClick(row), "aria-label": rowLabel?.(row) } : {})}
+                className={`motion-row grid w-full items-center gap-x-12 border-b border-line px-6 text-left last:border-b-0 ${
+                  onRowClick ? "cursor-pointer rounded-[2px] hover:bg-panel focus-visible:bg-panel focus-visible:outline-2 focus-visible:outline-green" : ""
+                } ${rowClassName?.(row, i) ?? ""}`}
+                style={{ ...grid, minHeight: rowHeight, animationDelay: `${Math.min(i, 3) * 25}ms`, ...rowStyle?.(row, i) }}
+              >
+                {columns.map((c) => (
+                  <span
+                    key={c.key}
+                    className={`min-w-0 truncate ${c.align === "center" ? "text-center" : ""} ${c.className?.(row, i) ?? ""}`}
+                  >
+                    {c.cell(row, i)}
+                  </span>
+                ))}
+              </Row>
+            );
+          })
         )}
       </div>
     </div>
