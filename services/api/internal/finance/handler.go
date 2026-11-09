@@ -23,10 +23,13 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 	f.GET("/summary", h.summary)
 	f.GET("/cashflow", h.cashflow)
 	f.GET("/transactions", h.transactions)
+	f.GET("/transactions/:id", h.transaction)
 	f.POST("/transactions", h.addTransaction)
 	f.PATCH("/transactions/:id", h.updateTransaction)
 	f.DELETE("/transactions/:id", h.deleteTransaction)
 	f.GET("/subscriptions", h.subscriptions)
+	f.POST("/subscriptions", h.addSubscription)
+	f.PATCH("/subscriptions/:id", h.updateSubscription)
 	f.POST("/subscriptions/:id/advance", h.advanceSubscription)
 	f.GET("/quota", h.quota)
 	f.GET("/options", h.options)
@@ -72,6 +75,25 @@ func (h *Handler) transactions(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, http.StatusOK, FilterTransactions(snap.Transactions, TransactionFilter{Kind: kind, Limit: limit}))
+}
+
+func (h *Handler) transaction(c *gin.Context) {
+	id, ok := validID(c)
+	if !ok {
+		return
+	}
+	snap, err := h.svc.Snapshot(c.Request.Context())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	for _, t := range snap.Transactions {
+		if t.ID == id {
+			httpx.OK(c, http.StatusOK, t)
+			return
+		}
+	}
+	httpx.Fail(c, httpx.NotFound("Transaction not found."))
 }
 
 func (h *Handler) addTransaction(c *gin.Context) {
@@ -125,6 +147,38 @@ func (h *Handler) subscriptions(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, http.StatusOK, ComputeSubscriptions(snap, h.svc.Rules()))
+}
+
+func (h *Handler) addSubscription(c *gin.Context) {
+	var in SubscriptionInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		httpx.Fail(c, httpx.BadRequest("invalid_body", "Request body is not valid JSON.", nil))
+		return
+	}
+	s, err := h.svc.AddSubscription(c.Request.Context(), auth.CurrentUser(c).Email, in)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, http.StatusCreated, s)
+}
+
+func (h *Handler) updateSubscription(c *gin.Context) {
+	id, ok := validID(c)
+	if !ok {
+		return
+	}
+	var in SubscriptionInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		httpx.Fail(c, httpx.BadRequest("invalid_body", "Request body is not valid JSON.", nil))
+		return
+	}
+	s, err := h.svc.UpdateSubscription(c.Request.Context(), auth.CurrentUser(c).Email, id, in)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.OK(c, http.StatusOK, s)
 }
 
 func (h *Handler) advanceSubscription(c *gin.Context) {

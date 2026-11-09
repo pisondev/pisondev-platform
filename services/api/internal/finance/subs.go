@@ -12,6 +12,7 @@ type SubItem struct {
 	Name        string    `json:"name"`
 	Price       Money     `json:"price"`
 	Cycle       string    `json:"cycle"`
+	Status      string    `json:"status"`
 	BillingDay  *int64    `json:"billingDay"`
 	NextBilling LocalDate `json:"nextBilling"`
 	Notes       string    `json:"notes"`
@@ -35,15 +36,16 @@ type Roster struct {
 }
 
 type SubscriptionsView struct {
-	Monthly SubGroup `json:"monthly"`
-	Yearly  SubGroup `json:"yearly"`
-	Roster  Roster   `json:"roster"`
-	Savings Money    `json:"savings"`
-	Status  string   `json:"status"` // safe or short
+	Monthly  SubGroup  `json:"monthly"`
+	Yearly   SubGroup  `json:"yearly"`
+	Roster   Roster    `json:"roster"`
+	Inactive []SubItem `json:"inactive"` // paused or stopped, by name
+	Savings  Money     `json:"savings"`
+	Status   string    `json:"status"` // safe or short
 }
 
 func itemOf(s Subscription) SubItem {
-	return SubItem{ID: s.ID, Name: s.Name, Price: s.PriceValue(), Cycle: s.Cycle, BillingDay: s.BillingDay, NextBilling: s.NextBilling, Notes: s.Notes}
+	return SubItem{ID: s.ID, Name: s.Name, Price: s.PriceValue(), Cycle: s.Cycle, Status: s.Status, BillingDay: s.BillingDay, NextBilling: s.NextBilling, Notes: s.Notes}
 }
 
 func byPriceDesc(items []SubItem) {
@@ -97,9 +99,10 @@ func ComputeRoster(subs []Subscription) Roster {
 
 // ComputeSubscriptions builds the Subscriptions page.
 func ComputeSubscriptions(s Snapshot, r Rules) SubscriptionsView {
-	v := SubscriptionsView{Monthly: SubGroup{Items: []SubItem{}}, Yearly: SubGroup{Items: []SubItem{}}}
+	v := SubscriptionsView{Monthly: SubGroup{Items: []SubItem{}}, Yearly: SubGroup{Items: []SubItem{}}, Inactive: []SubItem{}}
 	for _, sub := range s.Subscriptions {
 		if sub.Status != SubActive {
+			v.Inactive = append(v.Inactive, itemOf(sub))
 			continue
 		}
 		switch sub.Cycle {

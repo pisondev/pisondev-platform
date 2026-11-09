@@ -21,6 +21,8 @@ const (
 	CycleMonthly = "Bulanan"
 	CycleYearly  = "Tahunan"
 	SubActive    = "Aktif"
+	SubPaused    = "Dijeda"
+	SubStopped   = "Berhenti"
 )
 
 type Transaction struct {

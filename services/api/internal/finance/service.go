@@ -74,6 +74,10 @@ type AddInput struct {
 	Notes           string `json:"notes"`
 	WeeklyAllowance bool   `json:"weeklyAllowance"` // income that starts a new week
 	AllowDuplicate  bool   `json:"allowDuplicate"`
+	// PaysSubscription moves that subscription's Next Billing one cycle on, in the same
+	// database transaction; PaysFrom must equal its current Next Billing.
+	PaysSubscription string `json:"paysSubscription"`
+	PaysFrom         string `json:"paysFrom"`
 }
 
 type fieldErrors map[string]any
@@ -167,6 +171,9 @@ func (s *Service) AddTransaction(ctx context.Context, actor string, in AddInput)
 	if in.WeeklyAllowance && t.Type != TypeIncome {
 		errs["weeklyAllowance"] = "Only income can start a new week."
 	}
+	if in.PaysSubscription != "" && (t.Type != TypeExpense || !uuidPattern.MatchString(in.PaysSubscription)) {
+		errs["paysSubscription"] = "Only an expense can pay a subscription."
+	}
 	if err := errs.err(); err != nil {
 		return Transaction{}, err
 	}
@@ -193,6 +200,10 @@ func (s *Service) AddTransaction(ctx context.Context, actor string, in AddInput)
 		}
 		if in.WeeklyAllowance {
 			return s.startWeek(ctx, tx, actor, snap.Weeks, t.Date)
+		}
+		if in.PaysSubscription != "" {
+			_, err := advanceIn(ctx, tx, actor, in.PaysSubscription, in.PaysFrom)
+			return err
 		}
 		return nil
 	})
@@ -383,32 +394,36 @@ func (s *Service) AdvanceSubscription(ctx context.Context, actor, id, from strin
 		return Subscription{}, err
 	}
 	var out Subscription
-	err := s.repo.inTx(ctx, func(tx pgx.Tx) error {
-		old, _, err := get(ctx, tx, subscriptionCodec, id)
-		if errors.Is(err, ErrNotFound) {
-			return httpx.NotFound("Subscription not found.")
-		}
-		if err != nil {
-			return err
-		}
-		if from != "" && old.NextBilling.String() != from {
-			return httpx.Conflict("stale", "Next Billing has already changed.", map[string]any{"nextBilling": old.NextBilling.String()})
-		}
-		next, ok := AdvanceBilling(old)
-		if !ok {
-			return httpx.BadRequest("no_next_billing", "This subscription has no Next Billing date.", nil)
-		}
-		sub := old
-		sub.NextBilling = next
-		if err := update(ctx, tx, subscriptionCodec, &sub, actor); err != nil {
-			return err
-		}
-		out = sub
-		return audit(ctx, tx, actor, "advance", "subscription", id, old, sub)
+	err := s.repo.inTx(ctx, func(tx pgx.Tx) (err error) {
+		out, err = advanceIn(ctx, tx, actor, id, from)
+		return err
 	})
 	if err != nil {
 		return Subscription{}, err
 	}
 	s.notify.Notify()
 	return out, nil
+}
+
+func advanceIn(ctx context.Context, tx pgx.Tx, actor, id, from string) (Subscription, error) {
+	old, _, err := get(ctx, tx, subscriptionCodec, id)
+	if errors.Is(err, ErrNotFound) {
+		return Subscription{}, httpx.NotFound("Subscription not found.")
+	}
+	if err != nil {
+		return Subscription{}, err
+	}
+	if from != "" && old.NextBilling.String() != from {
+		return Subscription{}, httpx.Conflict("stale", "Next Billing has already changed.", map[string]any{"nextBilling": old.NextBilling.String()})
+	}
+	next, ok := AdvanceBilling(old)
+	if !ok {
+		return Subscription{}, httpx.BadRequest("no_next_billing", "This subscription has no Next Billing date.", nil)
+	}
+	sub := old
+	sub.NextBilling = next
+	if err := update(ctx, tx, subscriptionCodec, &sub, actor); err != nil {
+		return Subscription{}, err
+	}
+	return sub, audit(ctx, tx, actor, "advance", "subscription", id, old, sub)
 }
