@@ -7,12 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- 2026-11-09: Savings per bill cycle. The Bill cycle table shows Net, Saved and Can save
-  (end balance above the Rp50.000 minimum, so the opening balance and anything not moved
-  earlier carry over), with "Ready to move to savings" under it. A "Pindah ke Tabungan"
-  template fills that amount; a move to savings (Notes `dipindah ke tabungan`) lowers the
-  balance but is neither spending nor outcome. Expense rows get a "Moved to my savings
-  account" checkbox, and "Paid back" now writes its phrase into Notes in new rows too.
+- 2026-11-09: Savings per bill cycle, looking back. Each closed cycle shows what it could
+  save on its own (its surplus; the first also its opening balance above the Rp50.000
+  minimum), what was moved for it and what is left, so cycles add up; the running cycle
+  shows none. Moves to savings (Notes `dipindah ke tabungan`) fill the oldest cycle first,
+  lower the balance, and are neither spending nor outcome. A "Pindah ke Tabungan" template
+  offers the total left and warns when today's balance cannot cover it. Expense rows get a
+  "Moved to my savings account" checkbox, and "Paid back" now writes its phrase into Notes
+  in new rows too.
 
 - 2026-11-09: Cash flow "Bill cycle" grouping, next to Monthly and Weekly: each period
   runs from the day after a month's last subscription bill to the next month's last bill

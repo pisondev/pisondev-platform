@@ -53,11 +53,10 @@ bill is paid.
 ## Bill cycles and moving money to savings
 
 A bill cycle runs from the day after a month's last subscription bill (a Langganan
-expense) to the next month's last bill; the first starts at the opening balance. For each
-cycle the cash flow gives Net (income − spending), Saved, the Balance at its end, and
-**Can save = Balance − Rp50.000** (the minimum balance stays). Using the balance rather
-than the net carries the opening balance and anything not moved earlier into the next
-cycle, so moving all of it starts the next cycle from Rp50.000, and moving half is fine.
+expense) to the next month's last bill; the first starts at the opening balance. The view
+looks back: each **closed** cycle **could save its own surplus** (income − spending); the
+first also adds the opening balance above the Rp50.000 minimum. The figures do not
+overlap, so they add up. The running cycle has none, since its bills are not paid yet.
 
 A move to a savings account is a Keluar (Lainnya) whose Notes contain
 `dipindah ke tabungan`. It lowers the balance but is neither spending nor outcome: it is
@@ -65,8 +64,10 @@ left out of the quota and counted as Saved. The phrase `dikecualikan dari kuota`
 it so the sheet's quota skips it too. The sheet's Weekly Recap Spent still counts it,
 since that formula sums every Keluar.
 
-Save now (the "Pindah ke Tabungan" template) = the last closed cycle's Can save, less
-what was moved since, and never more than today's balance − Rp50.000.
+Moves fill the oldest closed cycle with room first; anything beyond all cycles goes to the
+latest. Each closed cycle shows Could save, Saved and Left. The "Pindah ke Tabungan"
+template offers the total left; if that is more than today's balance above Rp50.000
+(the running cycle may have used part of it), the sheet says so but does not block.
 
 ## Subscription roster (`langganan`)
 

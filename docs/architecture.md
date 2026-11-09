@@ -40,7 +40,7 @@ Finance routes:
 | Method and path | Purpose |
 |---|---|
 | `GET /finance/summary` | Balance of the tracked account |
-| `GET /finance/cashflow?granularity=monthly\|weekly\|billing` | Income, outcome and net per period; `billing` cycles run from the day after a month's last Langganan bill to the next month's last bill (first one from the opening balance), labeled by that end date, with the running cycle labeled `Now`. Points carry `saved`, `balance` and `canSave`; billing adds `saveNow` |
+| `GET /finance/cashflow?granularity=monthly\|weekly\|billing` | Income, outcome and net per period; `billing` cycles run from the day after a month's last Langganan bill to the next month's last bill (first one from the opening balance), labeled by that end date, with the running cycle labeled `Now`. Points carry `saved` and `balance`; closed bill cycles also `couldSave`, `savedFor` and `left`, the running one `running`, and billing adds `unsaved` and `available` |
 | `GET /finance/transactions?kind=all\|income\|outcome&limit=` | Newest first |
 | `GET /finance/transactions/:id` | One transaction, for the edit form |
 | `POST /finance/transactions` | Add; `weeklyAllowance: true` also starts a Weekly Recap week; `paysSubscription` + `paysFrom` also shift that subscription's Next Billing in the same database transaction |

@@ -373,9 +373,10 @@ The transaction sheet also edits (`editing`): no templates, Delete beside Cancel
 "paid back" checkbox writes the exclusion phrase into Notes so the change stays visible.
 Expense rows have two notes-backed checkboxes: "Paid back by someone else" and "Moved to
 my savings account"; both write their phrase into Notes so the change stays visible. The
-"Pindah ke Tabungan" template (after the allowance, when the last bill cycle left money)
-fills the Save now amount. In Bill cycle, the period table shows Net, Saved and Can save,
-with "Ready to move to savings" under it.
+"Pindah ke Tabungan" template (after the allowance, when closed bill cycles have money
+left) fills that total and warns in gold when it exceeds today's balance above Rp50.000.
+In Bill cycle, the period table shows Could save, Saved and Left per closed cycle
+("running" for the current one), with the unsaved total under it.
 
 A subscription template adds "Paid the <date> bill", checked by default, which moves that
 subscription's Next Billing on with the save. The subscription sheet adds, edits,
