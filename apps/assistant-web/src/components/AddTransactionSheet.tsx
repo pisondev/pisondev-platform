@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ApiError, post } from "@/lib/api";
 import { nowWIB, rupiah } from "@/lib/format";
 import type { Options, Transaction } from "@/lib/types";
+import { AmountInput, formatAmount } from "./AmountInput";
 import { Select } from "./Select";
 import { Toggle } from "./ui";
 
@@ -13,12 +14,9 @@ const EXCLUDE_MARKER = "dikecualikan dari kuota";
 
 type Kind = "Keluar" | "Masuk";
 
-/** Parses "25000", "25.000", "Rp25.000" or "25rb" into rupiah. */
-function parseAmount(raw: string): number {
-  const s = raw.trim().toLowerCase().replace(/^rp/, "");
-  const k = /^(\d+(?:[.,]\d+)?)\s*(rb|k)$/.exec(s);
-  if (k) return Math.round(parseFloat(k[1].replace(",", ".")) * 1000);
-  return Number(s.replace(/[.,\s]/g, "")) || 0;
+/** The Amount field holds "25.000"; the dots are display only. */
+function parseAmount(formatted: string): number {
+  return Number(formatted.replace(/\D/g, "")) || 0;
 }
 
 /** A routine transaction that fills the form; nothing is saved until Save. */
@@ -143,7 +141,7 @@ export function AddTransactionSheet({
   function apply(t: Template) {
     setKind(t.kind);
     setName(t.name);
-    setAmount(t.amount ? rupiah(t.amount).replace(/^Rp/, "") : "");
+    setAmount(formatAmount(String(t.amount)));
     if (t.category) setCategory(t.category);
     setAccount(t.account);
     setDate(nowWIB());
@@ -262,7 +260,7 @@ export function AddTransactionSheet({
             {fieldError("name")}
           </Field>
           <Field label="Amount">
-            <input ref={amountInput} required inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="25.000 or 25rb" className={input} />
+            <AmountInput ref={amountInput} required value={amount} onChange={setAmount} placeholder="25.000 or 25rb" className={input} />
             {fieldError("amount")}
           </Field>
           {kind === "Keluar" ? (
