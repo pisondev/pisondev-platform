@@ -375,7 +375,8 @@ sheet on that bill.
 Use `rupiah()` for amounts (`Rp25.000`, `-Rp25.000`, `Rp416.551,65` with two sen digits
 only when there are sen, `-` for missing amounts) and
 `signedRupiah()` for signed transaction/savings values (`+Rp25.000`). Render them with
-`<SenText text={rupiah(n)} />`, which raises the sen and comma (`.sen`: 0.7em, 0.5em up);
+`<SenText text={rupiah(n)} />`, which raises the sen and comma (`.sen`: 0.7em inline-block on the
+line top, with Tailwind's `sup` offset undone, so it never leaves its line box);
 keep the plain string for labels, messages and aria text. `AnimatedMoney` does the same. Use `shortDate()`
 and `dateRange()` for the existing English month labels. Distinguish missing, zero,
 negative, estimated, and failed values; never turn a failed request into a believable zero.

@@ -146,6 +146,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- 2026-11-09: Raised sen no longer reach into the element above or get cut off in table
+  cells, the quota bar and chart labels. Tailwind's preflight lifts every `<sup>` by 0.5em;
+  `.sen` now undoes that and sits on the top of its own line box.
+
 - 2026-11-09: The quota page no longer crashes when there are no expenses: the API now
   returns `expenses: []` instead of `null`.
 
