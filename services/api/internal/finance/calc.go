@@ -38,10 +38,15 @@ func Balance(txs []Transaction, r Rules) Money {
 	return b
 }
 
-// countsTowardQuota: an expense on the tracked account that is neither a subscription
-// nor marked as paid back by someone else.
+// isSaving: an expense that moved money to a savings account.
+func isSaving(t Transaction) bool {
+	return t.Type == TypeExpense && strings.Contains(strings.ToLower(t.Notes), SavingsMarker)
+}
+
+// countsTowardQuota: an expense on the tracked account that is neither a subscription,
+// a move to savings, nor marked as paid back by someone else.
 func countsTowardQuota(t Transaction, r Rules) bool {
-	return t.Type == TypeExpense && t.Account == r.Account && t.Category != CategorySubscription &&
+	return t.Type == TypeExpense && t.Account == r.Account && t.Category != CategorySubscription && !isSaving(t) &&
 		!(r.ExcludeMarker != "" && strings.Contains(strings.ToLower(t.Notes), strings.ToLower(r.ExcludeMarker)))
 }
 

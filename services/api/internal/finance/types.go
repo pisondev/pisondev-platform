@@ -16,7 +16,10 @@ const (
 	TypeOpening = "Saldo Awal"
 
 	CategorySubscription = "Langganan"
-	StatusEstimate       = "Estimasi"
+	// SavingsMarker in an expense's Notes marks money moved to a savings account: it
+	// leaves the balance but is neither spending nor outcome.
+	SavingsMarker  = "dipindah ke tabungan"
+	StatusEstimate = "Estimasi"
 
 	CycleMonthly = "Bulanan"
 	CycleYearly  = "Tahunan"

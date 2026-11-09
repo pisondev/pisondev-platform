@@ -12,13 +12,19 @@ type CashflowPoint struct {
 	Start   string `json:"start"`
 	End     string `json:"end"`
 	Income  Money  `json:"income"`
-	Outcome Money  `json:"outcome"`
-	Net     Money  `json:"net"`
+	Outcome Money  `json:"outcome"` // spending; moves to savings are in Saved
+	Net     Money  `json:"net"`     // Income - Outcome
+	Saved   Money  `json:"saved"`   // moved to savings in this period
+	Balance Money  `json:"balance"` // tracked account at the end of the period
+	CanSave Money  `json:"canSave"` // Balance above the minimum balance
 }
 
 type Cashflow struct {
 	Granularity string          `json:"granularity"` // monthly, weekly or billing
 	Points      []CashflowPoint `json:"points"`
+	// SaveNow, for billing: what the last closed cycle left to move to savings, less what
+	// was moved since and never more than the balance above the minimum today.
+	SaveNow Money `json:"saveNow"`
 }
 
 // ComputeCashflow totals income and expenses of the tracked account per calendar month,
@@ -84,17 +90,64 @@ func ComputeCashflow(s Snapshot, r Rules, granularity string, now time.Time) Cas
 			if d.Before(b.from) || !d.Before(b.to) {
 				continue
 			}
-			switch t.Type {
-			case TypeIncome:
+			switch {
+			case t.Type == TypeIncome:
 				p.Income += t.AmountValue()
-			case TypeExpense:
+			case isSaving(t):
+				p.Saved += t.AmountValue()
+			case t.Type == TypeExpense:
 				p.Outcome += t.AmountValue()
 			}
 		}
 		p.Net = p.Income - p.Outcome
+		p.Balance = balanceBefore(s.Transactions, r, b.to)
+		p.CanSave = max(0, p.Balance-r.MinBalance)
 		cf.Points = append(cf.Points, p)
 	}
+	if cf.Granularity == "billing" {
+		cf.SaveNow = saveNow(cf.Points, s.Transactions, r)
+	}
 	return cf
+}
+
+// balanceBefore is the tracked account's balance from everything dated before day to.
+func balanceBefore(txs []Transaction, r Rules, to time.Time) Money {
+	var b Money
+	for _, t := range txs {
+		if t.Account != r.Account || !t.Date.Valid() || !t.Date.Day().Before(to) {
+			continue
+		}
+		switch t.Type {
+		case TypeOpening, TypeIncome:
+			b += t.AmountValue()
+		case TypeExpense:
+			b -= t.AmountValue()
+		}
+	}
+	return b
+}
+
+func saveNow(points []CashflowPoint, txs []Transaction, r Rules) Money {
+	var closed *CashflowPoint
+	for i := range points {
+		if points[i].Label != "Now" {
+			closed = &points[i]
+		}
+	}
+	if closed == nil {
+		return 0
+	}
+	end, err := time.ParseInLocation(dateLayout, closed.End, clock.WIB)
+	if err != nil {
+		return 0
+	}
+	left := closed.CanSave
+	for _, t := range txs {
+		if t.Account == r.Account && isSaving(t) && t.Date.Valid() && t.Date.Day().After(end) {
+			left -= t.AmountValue()
+		}
+	}
+	return max(0, min(left, Balance(txs, r)-r.MinBalance))
 }
 
 // billingCutoffs returns, per month, the day of the last subscription bill on the

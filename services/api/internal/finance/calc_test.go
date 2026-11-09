@@ -333,3 +333,38 @@ func TestCashflowBillingCycles(t *testing.T) {
 		}
 	}
 }
+
+// Money moved to savings leaves the balance but is neither spending nor outcome, and
+// SaveNow offers what the last closed cycle left above the minimum balance.
+func TestCashflowSavings(t *testing.T) {
+	s := Snapshot{Transactions: []Transaction{
+		tx("2026-09-20T15:07", "Opening balance", TypeOpening, "", 100000, ""),
+		tx("2026-09-22", "Allowance", TypeIncome, "", 400000, ""),
+		tx("2026-09-29", "Bill", TypeExpense, CategorySubscription, 50000, ""),
+		tx("2026-09-30", "Pindah ke tabungan", TypeExpense, "Lainnya", 100000, "Sisihkan siklus, dipindah ke tabungan, dikecualikan dari kuota"),
+		tx("2026-10-01", "Snack", TypeExpense, "Makan", 20000, ""),
+	}}
+	cf := ComputeCashflow(s, testRules, "billing", at("2026-10-02T09:00"))
+	if len(cf.Points) != 2 {
+		t.Fatalf("points = %+v", cf.Points)
+	}
+	first, now := cf.Points[0], cf.Points[1]
+	// Closed cycle: balance 100.000 + 400.000 - 50.000 = 450.000; can save 400.000.
+	if first.Balance != Rupiah(450000) || first.CanSave != Rupiah(400000) || first.Saved != 0 {
+		t.Errorf("closed cycle = %+v", first)
+	}
+	if now.Saved != Rupiah(100000) || now.Outcome != Rupiah(20000) || now.Balance != Rupiah(330000) {
+		t.Errorf("running cycle = %+v", now)
+	}
+	// 400.000 left after the cycle, 100.000 moved since: 300.000, and the balance allows
+	// 330.000 - 50.000 = 280.000.
+	if cf.SaveNow != Rupiah(280000) {
+		t.Errorf("SaveNow = %s, want 280000", cf.SaveNow)
+	}
+	q := ComputeQuota(s, testRules, at("2026-10-02T09:00"))
+	for _, e := range q.Expenses {
+		if e.Name == "Pindah ke tabungan" {
+			t.Error("a move to savings counts as spending")
+		}
+	}
+}
