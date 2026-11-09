@@ -13,10 +13,16 @@ import { SenText } from "../SenText";
 
 const LIMIT = 500; // the API maximum
 
-/** "Oct 2026" for a month, "Oct 6 - 12" for an allowance week. */
+/**
+ * "Oct 2026" for a month, "Oct 6 - 12" for an allowance week, and "Sep 30 - Oct 27" for a
+ * bill cycle, which ends on the month's last subscription bill ("Oct 28 - now" while running).
+ */
 function periodName(p: CashflowPoint, granularity: Granularity) {
+  if (granularity === "billing") return p.label === "Now" ? `${dateRange(p.start)} now` : dateRange(p.start, p.end);
   return granularity === "weekly" ? dateRange(p.start, p.end) : `${p.label} ${p.start.slice(0, 4)}`;
 }
+
+const periodHeading = { monthly: "Month", weekly: "Week", billing: "Bill cycle" };
 
 /** Cash flow in detail: chart, totals and periods, and every transaction of a period. */
 export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Granularity; initialKind: Kind }) {
@@ -62,6 +68,7 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             options={[
               { value: "monthly", label: "Monthly" },
               { value: "weekly", label: "Weekly" },
+              { value: "billing", label: "Bill cycle" },
             ]}
             className="min-h-[36px] min-w-260 rounded-card bg-card py-10 pr-28 pl-28 text-small text-ink"
           />
@@ -93,10 +100,10 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             empty={cashflow.loading ? "Loading..." : "No periods yet."}
             rowClassName={(p) => (p.start === chosen?.start ? "bg-panel" : "")}
             columns={[
-              { key: "period", label: granularity === "weekly" ? "Week" : "Month", width: 230, cell: (p) => periodName(p, granularity) },
-              { key: "income", label: "Income", width: 210, cell: (p) => <SenText text={rupiah(p.income)} />, className: () => "text-green" },
-              { key: "outcome", label: "Outcome", width: 210, cell: (p) => <SenText text={rupiah(p.outcome)} />, className: () => "text-maroon" },
-              { key: "net", label: "Net", width: 210, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
+              { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
+              { key: "income", label: "Income", width: 200, cell: (p) => <SenText text={rupiah(p.income)} />, className: () => "text-green" },
+              { key: "outcome", label: "Outcome", width: 220, cell: (p) => <SenText text={rupiah(p.outcome)} />, className: () => "text-maroon" },
+              { key: "net", label: "Net", width: 240, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
             ]}
           />
         </Card>

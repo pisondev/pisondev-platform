@@ -27,7 +27,8 @@ export type CashflowPoint = {
   net: number;
 };
 
-export type Granularity = "monthly" | "weekly";
+// billing: from the day after a month's last subscription bill to the next month's last bill.
+export type Granularity = "monthly" | "weekly" | "billing";
 export type CashflowKind = "all" | "income" | "outcome";
 export type Cashflow = { granularity: Granularity; points: CashflowPoint[] };
 

@@ -48,6 +48,7 @@ export function FinanceDashboard() {
             options={[
               { value: "monthly", label: "Monthly" },
               { value: "weekly", label: "Weekly" },
+              { value: "billing", label: "Bill cycle" },
             ]}
             className="min-h-[36px] min-w-260 rounded-card bg-card py-10 pr-28 pl-28 text-small text-ink"
           />
