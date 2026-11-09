@@ -138,6 +138,14 @@ body {
 
 /* Navigation tiles (NavTile): tinted gradient from the sky/mint tokens, a hairline edge, and
    a soft glow with a thin ring tucked into the bottom-right corner behind the content. */
+/* Sen after the whole rupiah: smaller and raised, without changing the line height. */
+.sen {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: 0.5em;
+  margin-left: 0.03em;
+}
+
 .nav-tile {
   background: linear-gradient(155deg, var(--tile-from), var(--tile-to));
   box-shadow: inset 0 0 0 1px var(--tile-edge), 0 1px 2px rgb(0 0 0 / 0.04), 0 10px 24px -18px var(--tile-shadow);

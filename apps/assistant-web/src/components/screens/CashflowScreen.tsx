@@ -9,6 +9,7 @@ import { CashflowChart, cashflowSeries } from "../Charts";
 import { DataTable } from "../DataTable";
 import { Select } from "../Select";
 import { Card, Note, PageHeader, Panel, Toggle } from "../ui";
+import { SenText } from "../SenText";
 
 const LIMIT = 500; // the API maximum
 
@@ -93,9 +94,9 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             rowClassName={(p) => (p.start === chosen?.start ? "bg-panel" : "")}
             columns={[
               { key: "period", label: granularity === "weekly" ? "Week" : "Month", width: 230, cell: (p) => periodName(p, granularity) },
-              { key: "income", label: "Income", width: 210, cell: (p) => rupiah(p.income), className: () => "text-green" },
-              { key: "outcome", label: "Outcome", width: 210, cell: (p) => rupiah(p.outcome), className: () => "text-maroon" },
-              { key: "net", label: "Net", width: 210, cell: (p) => signedRupiah(p.net), className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
+              { key: "income", label: "Income", width: 210, cell: (p) => <SenText text={rupiah(p.income)} />, className: () => "text-green" },
+              { key: "outcome", label: "Outcome", width: 210, cell: (p) => <SenText text={rupiah(p.outcome)} />, className: () => "text-maroon" },
+              { key: "net", label: "Net", width: 210, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
             ]}
           />
         </Card>
@@ -122,7 +123,7 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             ].map((s) => (
               <div key={s.label} className="min-w-0">
                 <dt className="text-small text-muted">{s.label}</dt>
-                <dd className={`truncate text-body font-bold ${s.tone}`}>{cashflow.data ? s.value : "..."}</dd>
+                <dd className={`truncate text-body font-bold ${s.tone}`}>{cashflow.data ? <SenText text={s.value} /> : "..."}</dd>
               </div>
             ))}
           </dl>
@@ -141,7 +142,7 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
                 key: "amount",
                 label: "Amount",
                 width: 210,
-                cell: (t) => signedRupiah(t.type === "Keluar" ? -(t.amount ?? 0) : t.amount ?? 0),
+                cell: (t) => <SenText text={signedRupiah(t.type === "Keluar" ? -(t.amount ?? 0) : t.amount ?? 0)} />,
                 className: (t) => (t.type === "Keluar" ? "text-maroon" : "text-green"),
               },
               { key: "name", label: "Name", width: 300, cell: (t) => t.name },

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { rupiah } from "@/lib/format";
+import { paintSen, SenText } from "./SenText";
 
 /** Keep final amounts available to assistive technology and reserve their full width. */
 export function AnimatedMoney({ value }: { value: number }) {
@@ -17,7 +18,7 @@ export function AnimatedMoney({ value }: { value: number }) {
     const finish = () => {
       cancelAnimationFrame(frame);
       current.current = value;
-      node.textContent = rupiah(value);
+      paintSen(node, rupiah(value));
     };
     const start = () => {
       if (started) return;
@@ -29,10 +30,10 @@ export function AnimatedMoney({ value }: { value: number }) {
         const progress = Math.min(1, (now - time) / 480);
         // Whole rupiah while counting; the last frame lands on the exact value, sen included.
         current.current = progress < 1 ? Math.round(from + (value - from) * (1 - Math.pow(1 - progress, 3))) : value;
-        node.textContent = rupiah(current.current);
+        paintSen(node, rupiah(current.current));
         if (progress < 1) frame = requestAnimationFrame(step);
       };
-      node.textContent = rupiah(from);
+      paintSen(node, rupiah(from));
       frame = requestAnimationFrame(step);
     };
     const observer = new IntersectionObserver((entries) => {
@@ -57,8 +58,8 @@ export function AnimatedMoney({ value }: { value: number }) {
   return (
     <span className="inline-grid tabular-nums">
       <span className="sr-only">{rupiah(value)}</span>
-      <span aria-hidden className="invisible col-start-1 row-start-1">{rupiah(value)}</span>
-      <span aria-hidden ref={visual} className="col-start-1 row-start-1">{rupiah(value)}</span>
+      <span aria-hidden className="invisible col-start-1 row-start-1"><SenText text={rupiah(value)} /></span>
+      <span aria-hidden ref={visual} className="col-start-1 row-start-1"><SenText text={rupiah(value)} /></span>
     </span>
   );
 }

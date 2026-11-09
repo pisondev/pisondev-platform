@@ -10,6 +10,7 @@ import { DataTable } from "../DataTable";
 import { AnimatedMoney } from "../Motion";
 import { SubscriptionSheet } from "../SubscriptionSheet";
 import { Card, Note, PageHeader, Panel, Toggle } from "../ui";
+import { SenText } from "../SenText";
 
 type Cycle = "monthly" | "yearly";
 
@@ -89,7 +90,7 @@ export function SubscriptionsScreen() {
                 align: "center",
                 cell: (s) => (cycle === "monthly" ? s.billingDay ?? shortDate(s.nextBilling).split(" ")[1] : shortDate(s.nextBilling)),
               },
-              { key: "amount", label: "Amount", width: 300, cell: (s) => `-${rupiah(s.price)}${mayChange(s) ? "*" : ""}` },
+              { key: "amount", label: "Amount", width: 300, cell: (s) => <SenText text={`-${rupiah(s.price)}${mayChange(s) ? "*" : ""}`} /> },
               { key: "name", label: "Name", width: 300, cell: (s) => s.name },
             ]}
             rowStyle={color}
@@ -119,7 +120,7 @@ export function SubscriptionsScreen() {
                 columns={[
                   { key: "name", label: "Name", width: 320, cell: (s) => s.name },
                   { key: "status", label: "Status", width: 160, cell: (s) => (s.status === "Dijeda" ? "Paused" : "Stopped") },
-                  { key: "amount", label: "Amount", width: 228, cell: (s) => rupiah(s.price) },
+                  { key: "amount", label: "Amount", width: 228, cell: (s) => <SenText text={rupiah(s.price)} /> },
                 ]}
                 rowClassName={() => "text-muted"}
                 onRowClick={setEditing}

@@ -10,6 +10,7 @@ import { SavingsChart } from "../Charts";
 import { DataTable } from "../DataTable";
 import { ProgressBar } from "../ProgressBar";
 import { Card, Figure, Note, PageHeader, Panel } from "../ui";
+import { SenText } from "../SenText";
 
 export function QuotaScreen() {
   const quota = useApi<Quota>("/finance/quota");
@@ -51,7 +52,7 @@ export function QuotaScreen() {
           </div>
           <p className="mt-6 px-100 text-small text-blue">
             Your quota for next week<span className="mx-16">:</span>
-            <b>{rupiah(q.nextWeekMax)}</b>
+            <b><SenText text={rupiah(q.nextWeekMax)} /></b>
           </p>
           {saved ? <p role="status" className="motion-feedback mt-12 px-100 text-small text-green">{saved}</p> : null}
 
@@ -75,7 +76,7 @@ export function QuotaScreen() {
                 columns={[
                   { key: "no", label: "No.", width: 86, align: "center", cell: (_, i) => i + 1 },
                   { key: "date", label: "Date", width: 170, align: "center", cell: (e) => shortDate(e.date) },
-                  { key: "amount", label: "Amount", width: 228, cell: (e) => `-${rupiah(e.amount)}`, className: () => "text-maroon" },
+                  { key: "amount", label: "Amount", width: 228, cell: (e) => <SenText text={`-${rupiah(e.amount)}`} />, className: () => "text-maroon" },
                   { key: "desc", label: "Description", width: 330, cell: (e) => <span title={e.notes || e.name}>{e.name}</span> },
                 ]}
                 onRowClick={edit}
@@ -111,7 +112,7 @@ export function QuotaScreen() {
                     key: "amount",
                     label: "Amount",
                     width: 170,
-                    cell: (r) => (r.amount === null ? "Not yet" : signedRupiah(r.amount)),
+                    cell: (r) => (r.amount === null ? "Not yet" : <SenText text={signedRupiah(r.amount)} />),
                     className: (r) => (r.amount === null ? "" : r.amount < 0 ? "text-maroon" : "text-green"),
                   },
                   { key: "desc", label: "Description", width: 230, cell: (r) => <span title={r.notes}>{r.estimated ? "Not yet" : r.notes}</span> },

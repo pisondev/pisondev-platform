@@ -10,6 +10,7 @@ import { DataTable } from "../DataTable";
 import { Select } from "../Select";
 import { QUOTA_FILL } from "../ProgressBar";
 import { Card, DetailLink, Figure, NavTile, Note, PageHeader, Panel, Toggle } from "../ui";
+import { SenText } from "../SenText";
 
 export function FinanceDashboard() {
   const [kind, setKind] = useState<Kind>("all");
@@ -84,7 +85,7 @@ export function FinanceDashboard() {
                 key: "amount",
                 label: "Amount",
                 width: 200,
-                cell: (t) => signedRupiah(t.type === "Keluar" ? -(t.amount ?? 0) : t.amount ?? 0),
+                cell: (t) => <SenText text={signedRupiah(t.type === "Keluar" ? -(t.amount ?? 0) : t.amount ?? 0)} />,
                 className: (t) => (t.type === "Keluar" ? "text-maroon" : "text-green"),
               },
               { key: "name", label: "Name", width: 330, cell: (t) => t.name },
@@ -101,7 +102,7 @@ export function FinanceDashboard() {
           {subs.data ? (
             <>
               <span>
-                <b>{rupiah(subs.data.monthly.total)}</b> / month
+                <b><SenText text={rupiah(subs.data.monthly.total)} /></b> / month
               </span>
               <span className="text-muted">
                 {subs.data.monthly.items.length} monthly · {subs.data.yearly.items.length} yearly
@@ -115,7 +116,7 @@ export function FinanceDashboard() {
           {quota.data ? (
             <>
               <span className={quota.data.remaining < 0 ? "text-maroon" : undefined}>
-                <b>{rupiah(quota.data.remaining)}</b> left
+                <b><SenText text={rupiah(quota.data.remaining)} /></b> left
               </span>
               <span aria-hidden className="block h-[max(5px,calc(var(--spacing)*12))] overflow-hidden rounded-full bg-white/75">
                 <span

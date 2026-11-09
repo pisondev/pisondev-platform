@@ -8,6 +8,7 @@ import { AmountInput, formatAmount, parseAmount } from "./AmountInput";
 import { Select } from "./Select";
 import { Check, DeleteButton, Field, FieldError, SheetActions, SheetError, SheetFrame, inputClass, useSheet } from "./Sheet";
 import { Toggle } from "./ui";
+import { SenText } from "./SenText";
 
 // Must match FINANCE_EXCLUDE_MARKER on the API and the sheet formula.
 const EXCLUDE_MARKER = "dikecualikan dari kuota";
@@ -257,7 +258,7 @@ export function AddTransactionSheet({
               >
                 <span className="text-small font-bold text-ink">{t.title}</span>
                 <span className={`text-small ${t.kind === "Masuk" ? "text-green" : "text-maroon"}`}>
-                  {t.kind === "Masuk" ? "Income" : "Expense"} · {rupiah(t.amount)}
+                  {t.kind === "Masuk" ? "Income" : "Expense"} · <SenText text={rupiah(t.amount)} />
                   {t.date ? ` · ${shortDate(t.date)}` : ""}
                 </span>
               </button>

@@ -1,5 +1,6 @@
 import { rupiah } from "@/lib/format";
 import type { CSSProperties } from "react";
+import { SenText } from "./SenText";
 
 /** Fill gradient per quota level; the Finance quota tile reuses it. */
 export const QUOTA_FILL = {
@@ -33,11 +34,13 @@ export function ProgressBar({
   const label = (overlay: boolean) =>
     over ? (
       <>
-        <span className="text-wine">{rupiah(spent)}</span>{" "}
-        <span className={overlay ? "text-white" : "text-wine"}>/ {rupiah(max)}</span>
+        <span className="text-wine"><SenText text={rupiah(spent)} /></span>{" "}
+        <span className={overlay ? "text-white" : "text-wine"}>/ <SenText text={rupiah(max)} /></span>
       </>
     ) : (
-      `${rupiah(spent)} / ${rupiah(max)}`
+      <>
+        <SenText text={rupiah(spent)} /> / <SenText text={rupiah(max)} />
+      </>
     );
 
   return (

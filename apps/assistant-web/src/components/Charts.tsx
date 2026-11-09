@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { rupiah } from "@/lib/format";
 import type { CashflowKind, CashflowPoint } from "@/lib/types";
 import { ChartMarks } from "./Motion";
+import { SenText } from "./SenText";
 
 /*
  * Charts drawn in the coordinate space of their Figma cards. Shapes are SVG; labels are
@@ -102,7 +103,7 @@ export function SubscriptionChart({ items, swatches, toggle }: {
       </svg>
       {bars.map((b) => (
         <Label key={`v-${b.id}`} x={b.x - 40} y={b.y - 52} w={barW + 80} h={44} vw={VW} vh={VH} style={{ color: b.sw.text }}>
-          {rupiah(b.price)}
+          <SenText text={rupiah(b.price)} />
         </Label>
       ))}
       {bars.map((b) => (
@@ -169,14 +170,14 @@ export function SavingsChart({ target, now }: { target: number; now: number }) {
         ) : null}
       </svg>
       <Label x={0} y={tLabel - 22} w={AX - 10} h={44} vw={VW} vh={VH} className="justify-end text-blue">
-        {rupiah(target)}
+        <SenText text={rupiah(target)} />
       </Label>
       <Label x={0} y={nLabel - 22} w={AX - 10} h={44} vw={VW} vh={VH} className="justify-end text-green">
-        {rupiah(now)}
+        <SenText text={rupiah(now)} />
       </Label>
       {lo - hi > 2 ? (
         <Label x={GAP_X + 10} y={(hi + lo) / 2 - 22} w={VW - GAP_X - 14} h={44} vw={VW} vh={VH} className={`justify-start ${gap > 0 ? "text-maroon" : "text-green"}`}>
-          {gap > 0 ? rupiah(gap) : `+${rupiah(-gap)}`}
+          <SenText text={gap > 0 ? rupiah(gap) : `+${rupiah(-gap)}`} />
         </Label>
       ) : null}
       <Label x={tX} y={BOTTOM + 10} w={barW} h={44} vw={VW} vh={VH} className="text-blue">
@@ -333,7 +334,7 @@ export function CashflowChart({ labels, series, toggle }: { labels: string[]; se
               className="chart-tip pointer-events-none"
             >
               <span className="rounded-full bg-card/95 px-14 py-2 font-bold shadow-[0_1px_4px_rgb(0_0_0/0.12)]" style={{ color: p.color }}>
-                {rupiah(p.value)}
+                <SenText text={rupiah(p.value)} />
               </span>
             </Label>
           );
