@@ -339,6 +339,12 @@ Category and Account use the shared `Select`; the date-time picker is native. Da
 with `nowWIB()`. Amount accepts digits, dot grouping, `Rp`, and `rb`/`k` shorthand.
 Client native validation and API field errors both exist.
 
+A Templates row sits above the fields: small cards (card background, line border, bold
+title, green or maroon `Income`/`Expense · amount` line) that fill the form and focus
+Amount without saving. The applied card keeps a green border and ring and is
+`aria-pressed`. Add new templates to `templates()` in the sheet, named like the existing
+Notion rows.
+
 Expense exposes Category and the exclusion checkbox; Income exposes the weekly allowance
 checkbox. Save uses a green-to-gold gradient, bold white text, and twice Cancel's flex
 share. Busy disables Save and changes its label to `Saving...`; other dismissal paths

@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- 2026-11-09: Templates in the New transaction sheet, starting with "Uang Saku
+  Mingguan". A template only fills the form (Income, "Uang saku mingguan", the weekly
+  allowance amount, Mandiri Debit, now, "Sangu rutin.", weekly allowance checked) and
+  focuses Amount; nothing is saved until Save.
+
 - 2026-10-31: Link to QR tool at `/qr`, opened from a fourth Hub tile. It turns a pasted
   link into a QR code in the browser (no API call), adds `https://` to a bare domain,
   refuses text too long for a code, and downloads the PNG as `qr-<host>.png`. Hub tiles
