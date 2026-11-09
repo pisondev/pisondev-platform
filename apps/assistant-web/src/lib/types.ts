@@ -24,13 +24,17 @@ export type CashflowPoint = {
   end: string;
   income: number;
   outcome: number;
-  net: number;
+  net: number; // income - outcome
+  saved: number; // moved to savings in the period (not in outcome)
+  balance: number; // at the end of the period
+  canSave: number; // balance above the Rp50.000 minimum
 };
 
 // billing: from the day after a month's last subscription bill to the next month's last bill.
 export type Granularity = "monthly" | "weekly" | "billing";
 export type CashflowKind = "all" | "income" | "outcome";
-export type Cashflow = { granularity: Granularity; points: CashflowPoint[] };
+// saveNow (bill cycles): what the last closed cycle left to move to savings.
+export type Cashflow = { granularity: Granularity; points: CashflowPoint[]; saveNow: number };
 
 export type SubItem = {
   id: string;

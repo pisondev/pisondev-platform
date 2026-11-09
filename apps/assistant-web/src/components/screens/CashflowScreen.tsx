@@ -99,14 +99,31 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             rowKey={(p) => p.start}
             empty={cashflow.loading ? "Loading..." : "No periods yet."}
             rowClassName={(p) => (p.start === chosen?.start ? "bg-panel" : "")}
-            columns={[
-              { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
-              { key: "income", label: "Income", width: 200, cell: (p) => <SenText text={rupiah(p.income)} />, className: () => "text-green" },
-              { key: "outcome", label: "Outcome", width: 220, cell: (p) => <SenText text={rupiah(p.outcome)} />, className: () => "text-maroon" },
-              { key: "net", label: "Net", width: 240, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
-            ]}
+            columns={
+              granularity === "billing"
+                ? [
+                    // A cycle's surplus, what was moved to savings in it, and what its end
+                    // balance allows to move (above the Rp50.000 minimum).
+                    { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
+                    { key: "net", label: "Net", width: 220, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
+                    { key: "saved", label: "Saved", width: 200, cell: (p) => (p.saved ? <SenText text={rupiah(p.saved)} /> : "-"), className: () => "text-blue" },
+                    { key: "canSave", label: "Can save", width: 230, cell: (p) => <SenText text={rupiah(p.canSave)} /> },
+                  ]
+                : [
+                    { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
+                    { key: "income", label: "Income", width: 200, cell: (p) => <SenText text={rupiah(p.income)} />, className: () => "text-green" },
+                    { key: "outcome", label: "Outcome", width: 220, cell: (p) => <SenText text={rupiah(p.outcome)} />, className: () => "text-maroon" },
+                    { key: "net", label: "Net", width: 240, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
+                  ]
+            }
           />
         </Card>
+        {granularity === "billing" && cashflow.data ? (
+          <p className="px-6 pt-12 text-small text-muted">
+            Ready to move to savings: <b className="text-blue"><SenText text={rupiah(cashflow.data.saveNow)} /></b>. The Rp50.000 minimum stays; record
+            the move with the &quot;Pindah ke Tabungan&quot; template in New transaction.
+          </p>
+        ) : null}
       </Panel>
 
       <Panel className="mt-24">

@@ -3,9 +3,9 @@
 import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import { dateRange, rupiah, shortDate, signedRupiah } from "@/lib/format";
-import type { ExpenseItem, Options, Quota, SavingsRow, Subscriptions, Transaction } from "@/lib/types";
+import type { Cashflow, ExpenseItem, Options, Quota, SavingsRow, Subscriptions, Transaction } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
-import { AddTransactionSheet } from "../AddTransactionSheet";
+import { AddTransactionSheet, type SavingHint } from "../AddTransactionSheet";
 import { SavingsChart } from "../Charts";
 import { DataTable } from "../DataTable";
 import { ProgressBar } from "../ProgressBar";
@@ -16,6 +16,11 @@ export function QuotaScreen() {
   const quota = useApi<Quota>("/finance/quota");
   const options = useApi<Options>("/finance/options");
   const subs = useApi<Subscriptions>("/finance/subscriptions");
+  // The last closed bill cycle and what it left to move to savings, for the template.
+  const cycles = useApi<Cashflow>("/finance/cashflow?granularity=billing");
+  const closed = cycles.data?.points.filter((p) => p.label !== "Now").at(-1);
+  const saving: SavingHint | undefined =
+    closed && cycles.data && cycles.data.saveNow > 0 ? { amount: cycles.data.saveNow, cycle: dateRange(closed.start, closed.end) } : undefined;
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState<string>();
   const q = quota.data;
@@ -30,6 +35,7 @@ export function QuotaScreen() {
     setSaved(message);
     quota.reload();
     subs.reload();
+    cycles.reload();
   };
 
   return (
@@ -129,11 +135,13 @@ export function QuotaScreen() {
           options={options.data}
           weeklyAllowance={q?.breakdown.weeklyAllowance}
           subscriptions={subs.data ? [...subs.data.monthly.items, ...subs.data.yearly.items] : undefined}
+          saving={saving}
           onSaved={(t) => {
             setAdding(false);
             setSaved(`Saved: ${t.name}, ${rupiah(t.amount)}. It reaches Notion and the sheet within a minute.`);
             quota.reload();
             subs.reload();
+            cycles.reload();
           }}
         />
       ) : null}

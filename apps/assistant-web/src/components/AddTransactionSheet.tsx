@@ -12,6 +12,8 @@ import { SenText } from "./SenText";
 
 // Must match FINANCE_EXCLUDE_MARKER on the API and the sheet formula.
 const EXCLUDE_MARKER = "dikecualikan dari kuota";
+// Must match finance.SavingsMarker: money moved to a savings account.
+const SAVINGS_MARKER = "dipindah ke tabungan";
 
 type Kind = "Keluar" | "Masuk";
 
@@ -54,9 +56,12 @@ function subscriptionTemplate(s: SubItem, today: string): Template {
   };
 }
 
+/** What a closed bill cycle left to move to savings, from the Bill cycle cash flow. */
+export type SavingHint = { amount: number; cycle: string };
+
 // Names and notes follow the rows already in Notion, so the sheet groups them the same way.
-// Subscriptions follow the allowance, soonest bill first.
-function templates(weeklyAllowance: number, subscriptions: SubItem[]): Template[] {
+// The allowance comes first, then the move to savings, then subscriptions, soonest first.
+function templates(weeklyAllowance: number, subscriptions: SubItem[], saving?: SavingHint): Template[] {
   const today = nowWIB().slice(0, 10);
   const bills = [...subscriptions]
     .sort((a, b) => (a.nextBilling ?? "9999").localeCompare(b.nextBilling ?? "9999"))
@@ -72,19 +77,39 @@ function templates(weeklyAllowance: number, subscriptions: SubItem[]): Template[
       notes: "Sangu rutin.",
       allowance: true,
     },
+    ...(saving
+      ? [
+          {
+            id: "saving",
+            title: "Pindah ke Tabungan",
+            kind: "Keluar" as const,
+            name: "Pindah ke tabungan",
+            amount: saving.amount,
+            account: "Mandiri Debit",
+            category: "Lainnya",
+            notes: `Sisihkan siklus ${saving.cycle}, ${SAVINGS_MARKER}, ${EXCLUDE_MARKER}`,
+          },
+        ]
+      : []),
     ...bills,
   ];
 }
 
 const markerPattern = /(,\s*)?dikecualikan dari kuota(\s*,)?/gi;
 
-/** Adds or removes the exclusion phrase in the notes text itself, so edits stay visible. */
-function withMarker(notes: string, on: boolean): string {
-  const has = notes.toLowerCase().includes(EXCLUDE_MARKER);
-  if (on && !has) return notes.trim() ? `${notes.trim()}, ${EXCLUDE_MARKER}` : EXCLUDE_MARKER;
-  if (!on && has) return notes.replace(markerPattern, (_, a, b) => (a && b ? ", " : "")).trim();
+const savingsPattern = /(,\s*)?dipindah ke tabungan(\s*,)?/gi;
+
+/** Adds or removes a phrase in the notes text itself, so the change stays visible. */
+function withPhrase(notes: string, phrase: string, pattern: RegExp, on: boolean): string {
+  const has = notes.toLowerCase().includes(phrase);
+  if (on && !has) return notes.trim() ? `${notes.trim()}, ${phrase}` : phrase;
+  if (!on && has) return notes.replace(pattern, (_, a, b) => (a && b ? ", " : "")).trim();
   return notes;
 }
+const withMarker = (notes: string, on: boolean) => withPhrase(notes, EXCLUDE_MARKER, markerPattern, on);
+// A move to savings also carries the exclusion phrase, so the sheet's quota skips it too.
+const withSavings = (notes: string, on: boolean) =>
+  on ? withMarker(withPhrase(notes, SAVINGS_MARKER, savingsPattern, true), true) : withPhrase(notes, SAVINGS_MARKER, savingsPattern, false);
 
 /** datetime-local needs a time; the API turns 00:00 back into a plain date. */
 const inputDate = (d: string) => (d.length === 10 ? `${d}T00:00` : d.slice(0, 16));
@@ -101,6 +126,7 @@ export function AddTransactionSheet({
   options,
   weeklyAllowance = 250000,
   subscriptions = [],
+  saving,
   editing,
   payFor,
 }: {
@@ -110,6 +136,7 @@ export function AddTransactionSheet({
   options: Options | undefined;
   weeklyAllowance?: number;
   subscriptions?: SubItem[];
+  saving?: SavingHint;
   editing?: Transaction;
   payFor?: SubItem;
 }) {
@@ -120,7 +147,6 @@ export function AddTransactionSheet({
   const [account, setAccount] = useState(editing?.account || "Mandiri Debit");
   const [date, setDate] = useState(() => (editing?.date ? inputDate(editing.date) : nowWIB()));
   const [notes, setNotes] = useState(editing?.notes ?? "");
-  const [excluded, setExcluded] = useState(false);
   const [allowance, setAllowance] = useState(false);
   const [pays, setPays] = useState<Template["pays"]>();
   const [markPaid, setMarkPaid] = useState(true);
@@ -144,8 +170,9 @@ export function AddTransactionSheet({
     wasLocked.current = locked;
   }, [locked]);
   const titleId = useId();
-  const list = templates(weeklyAllowance, subscriptions);
-  const excludedNow = editing ? notes.toLowerCase().includes(EXCLUDE_MARKER) : excluded;
+  const list = templates(weeklyAllowance, subscriptions, saving);
+  const excluded = notes.toLowerCase().includes(EXCLUDE_MARKER);
+  const toSavings = notes.toLowerCase().includes(SAVINGS_MARKER);
 
   function apply(t: Template) {
     setKind(t.kind);
@@ -155,7 +182,6 @@ export function AddTransactionSheet({
     setAccount(t.account);
     setDate(t.date ?? nowWIB());
     setNotes(t.notes);
-    setExcluded(false);
     setAllowance(t.allowance ?? false);
     setPays(t.pays);
     setMarkPaid(true);
@@ -215,7 +241,7 @@ export function AddTransactionSheet({
     return run(async () => {
       const t = await post<Transaction>("/finance/transactions", {
         ...fields,
-        notes: kind === "Keluar" ? withMarker(notes, excluded) : notes.trim(),
+        notes: notes.trim(),
         weeklyAllowance: kind === "Masuk" && allowance,
         allowDuplicate,
         paysSubscription: paying?.id ?? "",
@@ -311,9 +337,14 @@ export function AddTransactionSheet({
           <FieldError fields={error?.fields} name="notes" />
         </Field>
         {kind === "Keluar" ? (
-          <Check checked={excludedNow} onChange={(on) => (editing ? setNotes(withMarker(notes, on)) : setExcluded(on))}>
-            Paid back by someone else (left out of the quota)
-          </Check>
+          <>
+            <Check checked={excluded} onChange={(on) => setNotes(withMarker(notes, on))}>
+              Paid back by someone else (left out of the quota)
+            </Check>
+            <Check checked={toSavings} onChange={(on) => setNotes(withSavings(notes, on))}>
+              Moved to my savings account (not spending)
+            </Check>
+          </>
         ) : editing ? null : (
           <Check checked={allowance} onChange={setAllowance}>
             Weekly allowance (starts a new week)
