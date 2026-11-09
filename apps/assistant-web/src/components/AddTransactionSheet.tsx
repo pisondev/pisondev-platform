@@ -56,8 +56,11 @@ function subscriptionTemplate(s: SubItem, today: string): Template {
   };
 }
 
-/** What a closed bill cycle left to move to savings, from the Bill cycle cash flow. */
-export type SavingHint = { amount: number; cycle: string };
+/**
+ * What closed bill cycles have not moved to savings yet (from the Bill cycle cash flow),
+ * and what today's balance allows above the Rp50.000 minimum.
+ */
+export type SavingHint = { amount: number; cycle: string; available: number };
 
 // Names and notes follow the rows already in Notion, so the sheet groups them the same way.
 // The allowance comes first, then the move to savings, then subscriptions, soonest first.
@@ -316,6 +319,11 @@ export function AddTransactionSheet({
         </Field>
         <Field label="Amount">
           <AmountInput ref={amountInput} required value={amount} onChange={setAmount} placeholder="25.000 or 25rb" className={inputClass} />
+          {saving && toSavings && parseAmount(amount) > saving.available ? (
+            <span className="text-small text-gold">
+              Moving this leaves less than Rp50.000 in the account: today&apos;s balance allows {rupiah(saving.available)}.
+            </span>
+          ) : null}
           <FieldError fields={error?.fields} name="amount" />
         </Field>
         {kind === "Keluar" ? (

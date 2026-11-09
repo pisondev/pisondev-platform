@@ -102,12 +102,18 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
             columns={
               granularity === "billing"
                 ? [
-                    // A cycle's surplus, what was moved to savings in it, and what its end
-                    // balance allows to move (above the Rp50.000 minimum).
+                    // What each closed cycle could save on its own, what was moved for it,
+                    // and what is left. The running cycle has no figures yet.
                     { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
-                    { key: "net", label: "Net", width: 220, cell: (p) => <SenText text={signedRupiah(p.net)} />, className: (p) => (p.net < 0 ? "text-maroon" : "text-green") },
-                    { key: "saved", label: "Saved", width: 200, cell: (p) => (p.saved ? <SenText text={rupiah(p.saved)} /> : "-"), className: () => "text-blue" },
-                    { key: "canSave", label: "Can save", width: 230, cell: (p) => <SenText text={rupiah(p.canSave)} /> },
+                    {
+                      key: "could",
+                      label: "Could save",
+                      width: 230,
+                      cell: (p) => (p.couldSave === undefined ? "running" : <SenText text={signedRupiah(p.couldSave)} />),
+                      className: (p) => (p.couldSave === undefined ? "text-muted" : p.couldSave < 0 ? "text-maroon" : "text-green"),
+                    },
+                    { key: "saved", label: "Saved", width: 200, cell: (p) => (p.savedFor ? <SenText text={rupiah(p.savedFor)} /> : "-"), className: () => "text-blue" },
+                    { key: "left", label: "Left", width: 210, cell: (p) => (p.left === undefined ? "-" : <SenText text={rupiah(p.left)} />) },
                   ]
                 : [
                     { key: "period", label: periodHeading[granularity], width: 210, cell: (p) => periodName(p, granularity) },
@@ -120,8 +126,13 @@ export function CashflowScreen({ initialGroup, initialKind }: { initialGroup: Gr
         </Card>
         {granularity === "billing" && cashflow.data ? (
           <p className="px-6 pt-12 text-small text-muted">
-            Ready to move to savings: <b className="text-blue"><SenText text={rupiah(cashflow.data.saveNow)} /></b>. The Rp50.000 minimum stays; record
-            the move with the &quot;Pindah ke Tabungan&quot; template in New transaction.
+            Closed cycles not yet moved to savings: <b className="text-blue"><SenText text={rupiah(cashflow.data.unsaved)} /></b>.
+            {cashflow.data.unsaved > cashflow.data.available ? (
+              <>
+                {" "}The running cycle has used part of it, so today&apos;s balance allows <SenText text={rupiah(cashflow.data.available)} /> above the Rp50.000 minimum.
+              </>
+            ) : null}{" "}
+            Record a move with the &quot;Pindah ke Tabungan&quot; template in New transaction.
           </p>
         ) : null}
       </Panel>

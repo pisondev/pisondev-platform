@@ -16,11 +16,13 @@ export function QuotaScreen() {
   const quota = useApi<Quota>("/finance/quota");
   const options = useApi<Options>("/finance/options");
   const subs = useApi<Subscriptions>("/finance/subscriptions");
-  // The last closed bill cycle and what it left to move to savings, for the template.
+  // What closed bill cycles have not moved to savings yet, for the template.
   const cycles = useApi<Cashflow>("/finance/cashflow?granularity=billing");
-  const closed = cycles.data?.points.filter((p) => p.label !== "Now").at(-1);
+  const unsavedCycles = (cycles.data?.points ?? []).filter((p) => (p.left ?? 0) > 0).map((p) => dateRange(p.start, p.end));
   const saving: SavingHint | undefined =
-    closed && cycles.data && cycles.data.saveNow > 0 ? { amount: cycles.data.saveNow, cycle: dateRange(closed.start, closed.end) } : undefined;
+    cycles.data && cycles.data.unsaved > 0
+      ? { amount: cycles.data.unsaved, cycle: unsavedCycles.join(" & "), available: cycles.data.available }
+      : undefined;
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState<string>();
   const q = quota.data;
